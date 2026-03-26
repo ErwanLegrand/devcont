@@ -1,0 +1,21 @@
+[template]
+cargo_generate_version = ">=0.18.0"
+
+[placeholders.project-name]
+type = "string"
+prompt = "Project name?"
+
+[placeholders.description]
+type = "string"
+prompt = "Project description?"
+default = "A Rust project"
+
+[placeholders.author]
+type = "string"
+prompt = "Author name?"
+default = "Erwan Patrick Legrand"
+
+[placeholders.license]
+type = "string"
+prompt = "License?"
+default = "Apache-2.0 OR MIT"

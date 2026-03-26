@@ -1,0 +1,136 @@
+{
+  "name": "Rust Development Environment",
+  "dockerfile": "Dockerfile",
+  "context": "..",
+
+  "features": {
+    "ghcr.io/devcontainers/features/rust:1": {
+      "version": "latest",
+      "profile": "default"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // Core Rust development
+        "rust-lang.rust-analyzer",
+        "serayuzgur.crates",
+        "ms-vscode.vscode-toml",
+
+        // Development tools
+        "ms-vscode.test-adapter-converter",
+        "hbenl.vscode-test-explorer",
+        "ms-vscode.vscode-json",
+        "ms-vscode.vscode-yaml",
+        "redhat.vscode-yaml",
+        "ms-vscode.makefile-tools",
+
+        // Git and collaboration
+        "GitHub.copilot",
+        "ms-vscode.vscode-github-actions",
+        "GitHub.vscode-pull-request-github",
+
+        // Container and deployment
+        "ms-vscode.vscode-docker",
+        "ms-vscode.vscode-kubernetes-tools",
+
+        // Documentation and productivity
+        "bierner.markdown-preview-github-styles",
+        "ms-vscode.vscode-markdown-notebook",
+        "streetsidesoftware.code-spell-checker",
+        "gruntfuggly.todo-tree",
+
+        // Terminal and shell
+        "ms-vscode.vscode-terminal-here",
+        "foxgis.vscode-shell"
+      ],
+      "settings": {
+        // Rust Analyzer configuration
+        "rust-analyzer.checkOnSave.command": "clippy",
+        "rust-analyzer.checkOnSave.extraArgs": ["--", "-W", "clippy::pedantic"],
+        "rust-analyzer.cargo.features": "all",
+        "rust-analyzer.cargo.allTargets": true,
+        "rust-analyzer.showUnlinkedFileNotification": false,
+        "rust-analyzer.procMacro.enable": true,
+        "rust-analyzer.cargo.extraArgs": ["--workspace"],
+
+        // Editor configuration
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll": "explicit",
+          "source.organizeImports": "explicit"
+        },
+        "editor.rulers": [100],
+        "editor.wordWrap": "on",
+        "editor.minimap.enabled": false,
+
+        // File associations
+        "files.associations": {
+          "Cargo.toml": "toml",
+          "*.rs": "rust"
+        },
+
+        // Exclude build artifacts
+        "files.exclude": {
+          "**/target": true,
+          "**/.git": true,
+          "**/.DS_Store": true,
+          "**/node_modules": true
+        },
+        "search.exclude": {
+          "**/target": true,
+          "**/node_modules": true,
+          "**/Cargo.lock": true
+        },
+
+        // Terminal configuration
+        "terminal.integrated.shell.linux": "/bin/bash",
+        "terminal.integrated.defaultProfile.linux": "bash",
+
+        // Git configuration
+        "git.autofetch": true,
+        "git.confirmSync": false,
+
+        // Workspace trust
+        "security.workspace.trust.enabled": true
+      }
+    }
+  },
+
+  "forwardPorts": [
+    3000,  // Development web servers
+    8000,  // API servers
+    8080,  // Application servers
+    9000,  // Metrics/Prometheus
+    5432,  // PostgreSQL
+    6379,  // Redis
+    27017  // MongoDB
+  ],
+
+  "postCreateCommand": "./.devcontainer/post-create.sh",
+
+  "remoteUser": "vscode",
+
+  "mounts": [
+    "source=${localWorkspaceFolder}/.git,target=/workspace/.git,type=bind,consistency=cached",
+    "source=${localWorkspaceFolder}/.vscode/settings.json,target=/home/vscode/.vscode-server/data/Machine/settings.json,type=bind,consistency=cached"
+  ],
+
+  "containerEnv": {
+    "RUST_BACKTRACE": "1",
+    "RUST_LOG": "info",
+    "CARGO_HOME": "/usr/local/cargo",
+    "PATH": "/usr/local/cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+  },
+
+  "shutdownAction": "stopContainer",
+
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+}

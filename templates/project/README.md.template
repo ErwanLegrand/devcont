@@ -1,0 +1,97 @@
+![CI](https://github.com/USERNAME/REPO/actions/workflows/ci.yml/badge.svg)
+[![Crates.io](https://img.shields.io/crates/v/CRATE_NAME.svg)](https://crates.io/crates/CRATE_NAME)
+[![Docs.rs](https://docs.rs/CRATE_NAME/badge.svg)](https://docs.rs/CRATE_NAME)
+[![License](https://img.shields.io/badge/license-Apache--2.0%20OR%20MIT-blue.svg)](LICENSE-MIT)
+
+# {{project_name}}
+
+{{project_description}}
+
+## Overview
+
+{{project_name}} is a Rust library/crate that provides [brief description of functionality].
+
+## Features
+
+- High performance Rust implementation
+-  Memory safe with comprehensive error handling
+- Optional metrics and observability support
+- Configurable and extensible architecture
+- Well-documented with examples
+
+## Installation
+
+Add this to your `Cargo.toml`:
+
+```toml
+[dependencies]
+{{project_name}} = "0.1.0"
+```
+
+## Quick Start
+
+```rust
+use {{project_name}}::prelude::*;
+
+fn main() -> Result<()> {
+    // Your code here
+    Ok(())
+}
+```
+
+## Documentation
+
+Full API documentation is available at [{{repository_url}}]({{repository_url}}).
+
+## Examples
+
+See the `examples/` directory for complete usage examples.
+
+## Development
+
+### Prerequisites
+
+- Rust 1.70 or later
+- Cargo
+
+### Building
+
+```bash
+cargo build
+```
+
+### Testing
+
+```bash
+cargo test
+```
+
+### Code Quality
+
+```bash
+# Format code
+cargo fmt
+
+# Lint code
+cargo clippy
+
+# Run all checks
+cargo check
+```
+
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+## License
+
+This project is dual-licensed under:
+
+- **MIT License**: See [LICENSE-MIT](LICENSE-MIT) for details
+- **Apache License 2.0**: See [LICENSE-APACHE](LICENSE-APACHE) for details
+
+You may use this project under the terms of either license.
+
+## Authors
+
+Erwan Patrick Legrand <github@erwanlegrand.com>

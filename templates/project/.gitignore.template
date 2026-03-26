@@ -1,0 +1,41 @@
+# Rust
+target/
+Cargo.lock
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+*.tmp
+*.temp
+
+# Build artifacts
+debug/
+release/
+
+# Test coverage
+*.profraw
+*.profdata
+coverage/
+
+# Benchmark results
+criterion/
+
+# Backup files
+*.bak
+*.backup
