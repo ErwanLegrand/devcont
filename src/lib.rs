@@ -1,49 +1,16 @@
-//! rust-dev-template - Complete Rust development environment
+//! `devcont` — a CLI for launching and managing Dev Containers.
 //!
-//! This template provides a comprehensive Rust development setup with:
-//! - Development container for consistent environments
-//! - Pre-commit hooks for code quality
-//! - `XTask` commands for development workflows
-//! - All tools integrated and ready to use
+//! The library surface is intentionally small. External callers use:
 //!
-//! Copyright (c) 2025 Erwan Patrick Legrand
+//! - [`devcontainers::Devcontainer`] — load, run, and rebuild a dev container from a workspace.
+//! - [`error::Error`] / [`error::Result`] — all library errors.
+//! - [`settings::Settings`] — user settings loaded from `~/.config/devcont/config.toml`.
 //!
-//! Licensed under the MIT OR Apache-2.0 License.
-//! You may obtain a copy of the License at
-//!
-//! - MIT: <https://opensource.org/licenses/MIT>
-//! - Apache-2.0: <https://www.apache.org/licenses/LICENSE-2.0>
-//!
-//! Unless required by applicable law or agreed to in writing, software
-//! distributed under the License is distributed on an "AS IS" BASIS,
-//! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//! See the License for the specific language governing permissions and
-//! limitations under the License.
+//! The [`provider`] module is public for integration tests but its types are not stable API.
+#![warn(clippy::pedantic)]
 
-//! # Examples
-//!
-//! ```
-//! use rust_dev_template::prelude::*;
-//!
-//! // Your code here
-//! # Ok::<(), rust_dev_template::Error>(())
-//! ```
-
-#![warn(clippy::all, clippy::pedantic)]
-#![allow(clippy::module_name_repetitions)]
-
+pub(crate) mod audit;
+pub mod devcontainers;
 pub mod error;
-pub mod prelude;
-
-// Re-export commonly used items
-pub use error::{Error, Result};
-pub use prelude::*;
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_initialization() {
-        let result = Ok::<(), crate::Error>(());
-        assert!(result.is_ok());
-    }
-}
+pub mod provider;
+pub mod settings;

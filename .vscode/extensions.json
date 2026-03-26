@@ -1,0 +1,17 @@
+{
+  "recommendations": [
+    "rust-lang.rust-analyzer",
+    "serayuzgur.crates",
+    "tamasfe.even-better-toml",
+    "vadimcn.vscode-lldb",
+    "hbenl.vscode-test-explorer",
+    "ms-vscode.vscode-json",
+    "redhat.vscode-yaml",
+    "ms-vscode.vscode-docker",
+    "ms-vscode.vscode-github-actions",
+    "bierner.markdown-preview-github-styles",
+    "streetsidesoftware.code-spell-checker",
+    "gruntfuggly.todo-tree"
+  ],
+  "unwantedRecommendations": []
+}

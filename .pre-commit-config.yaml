@@ -15,14 +15,9 @@ repos:
       - id: check-merge-conflict
       - id: check-toml
       - id: check-json
-      - id: check-xml
-      - id: check-executables-have-shebangs
-      - id: check-shebang-scripts-are-executable
       - id: detect-private-key
-      - id: check-case-conflict
       - id: mixed-line-ending
         args: ['--fix=lf']
-      - id: requirements-txt-fixer
 
   # Rust-specific formatting and linting
   - repo: local
@@ -33,50 +28,24 @@ repos:
         language: system
         files: \.rs$
         pass_filenames: false
-        exclude: ^xtask/
 
       - id: clippy
         name: clippy
-        entry: cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::pedantic -W clippy::nursery
+        entry: cargo clippy --all-targets -- -D warnings
         language: system
         files: \.rs$
         pass_filenames: false
 
       - id: cargo-check
         name: cargo check
-        entry: cargo check --workspace
+        entry: cargo check
         language: system
         files: \.rs$
         pass_filenames: false
 
       - id: cargo-test
         name: cargo test (lib only)
-        entry: cargo test --workspace --lib
-        language: system
-        files: \.rs$
-        pass_filenames: false
-
-  # Security scanning
-  - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.5.4
-    hooks:
-      - id: forbid-crlf
-      - id: remove-crlf
-
-  # Commit message validation
-  - repo: https://github.com/compilerla/conventional-pre-commit
-    rev: v3.1.0
-    hooks:
-      - id: conventional-pre-commit
-        stages: [commit-msg]
-        args: []
-
-  # Additional Rust-specific checks
-  - repo: local
-    hooks:
-      - id: cargo-audit
-        name: cargo audit
-        entry: cargo audit --quiet
+        entry: cargo test --lib
         language: system
         files: \.rs$
         pass_filenames: false
@@ -88,12 +57,27 @@ repos:
         files: \.rs$
         pass_filenames: false
 
+      - id: cargo-audit
+        name: cargo audit
+        entry: cargo audit --quiet
+        language: system
+        files: (\.rs$|Cargo\.toml$|Cargo\.lock$)
+        pass_filenames: false
+
       - id: cargo-outdated
         name: cargo outdated
         entry: cargo outdated --exit-code 1
         language: system
-        files: \.rs$
+        files: (Cargo\.toml$|Cargo\.lock$)
         pass_filenames: false
+
+  # Commit message validation
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.1.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: []
 
 # CI configuration for automated updates
 ci:

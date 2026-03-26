@@ -1,5 +1,0 @@
-[toolchain]
-channel = "nightly"  # Required for Rust 2024 until it's stable
-components = ["rustfmt", "clippy", "rust-analyzer"]
-targets = ["x86_64-unknown-linux-gnu"]
-profile = "default"

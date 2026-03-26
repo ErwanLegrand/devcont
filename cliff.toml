@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 """
 body = """
 {%- macro remote_url() -%}
-  https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}
+  https://github.com/erwanlegrand/devcont
 {%- endmacro -%}
 
 {% if version -%}
@@ -41,6 +41,7 @@ commit_parsers = [
     { message = "^test", group = "Testing" },
     { message = "^chore\\(release\\)", skip = true },
     { message = "^chore\\(deps\\)", skip = true },
+    { message = "^chore\\(conductor\\)", skip = true },
     { message = "^chore", group = "Miscellaneous" },
     { message = "^ci", group = "CI" },
 ]

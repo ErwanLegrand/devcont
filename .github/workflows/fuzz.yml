@@ -1,0 +1,50 @@
+name: Fuzz
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run nightly at 02:00 UTC for extended coverage
+    - cron: '0 2 * * *'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install nightly Rust toolchain
+      uses: dtolnay/rust-toolchain@nightly
+
+    - name: Install cargo-fuzz
+      run: cargo install cargo-fuzz --locked
+
+    - name: Build fuzz targets
+      run: cargo +nightly fuzz build
+
+    - name: Run fuzz_config_parse (60 s / 100 000 runs)
+      run: |
+        cargo +nightly fuzz run fuzz_config_parse \
+          fuzz/seeds/fuzz_config_parse \
+          -- -max_total_time=60 -runs=100000
+
+    - name: Run fuzz_one_or_many (60 s / 100 000 runs)
+      run: |
+        cargo +nightly fuzz run fuzz_one_or_many \
+          fuzz/seeds/fuzz_one_or_many \
+          -- -max_total_time=60 -runs=100000
+
+    - name: Upload crash artifacts
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: fuzz-crashes
+        path: |
+          fuzz/artifacts/
+        if-no-files-found: ignore

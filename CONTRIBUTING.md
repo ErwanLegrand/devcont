@@ -11,6 +11,12 @@ Thank you for your interest in contributing to this project.
 
 ## Development Setup
 
+### Platform Support
+
+devcont is **Unix-only** (Linux and macOS). The codebase uses `std::os::unix` APIs
+unconditionally and shells out to `sh`, `docker`, and `podman`. Windows is not
+supported and there are no plans for Windows support at this time.
+
 ### Prerequisites
 
 - Rust stable toolchain (see `rust-toolchain.toml` for the exact version)

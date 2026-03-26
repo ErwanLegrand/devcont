@@ -1,0 +1,10 @@
+{
+    "name": "post-create",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "remoteUser": "root",
+    "overrideCommand": true,
+    "workspaceFolder": "/workspace",
+    "postCreateCommand": "touch /tmp/post_create_marker"
+}

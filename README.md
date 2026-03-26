@@ -1,20 +1,209 @@
-![CI](https://github.com/USERNAME/REPO/actions/workflows/ci.yml/badge.svg)
-[![Crates.io](https://img.shields.io/crates/v/CRATE_NAME.svg)](https://crates.io/crates/CRATE_NAME)
-[![Docs.rs](https://docs.rs/CRATE_NAME/badge.svg)](https://docs.rs/CRATE_NAME)
-[![License](https://img.shields.io/badge/license-Apache--2.0%20OR%20MIT-blue.svg)](LICENSE-MIT)
+# Devcont
 
-# Rust Dev Template
+Run [devcontainers](https://containers.dev/) from CLI or CI.
 
-Complete Rust development environment with all essential tools integrated.
+## Installation
 
-## Purpose
+`cargo install --path .`
 
-This template provides a fully configured local Rust development environment that combines a base project structure, a dev-container for hermetic builds, pre-commit hooks for automated quality gates, and XTask-driven workflow commands. It is intended to be the starting point for any new Rust crate in the repository, eliminating the per-project setup of formatting, linting, testing, and editor tooling.
+## Usage
 
-## Features
+Run from a project that contains `.devcontainer/devcontainer.json` (or `.devcontainer.json`):
 
-- **Base Project Structure** - Essential Rust patterns and error handling.
-- **Development Container** - Isolated, consistent development environment with pre-installed tools.
-- **Code Quality Tools** - Pre-commit hooks for automated formatting, linting, and testing.
-- **Development Tasks** - XTask commands for a unified development workflow (`cargo xtask check`, `cargo xtask lint`, etc.).
-- **VS Code Integration** - Optimized editor configuration, extensions, and debug support.
+```sh
+devcont                  # start (or resume) the container
+devcont rebuild          # destroy and rebuild the container
+devcont rebuild --no-cache  # rebuild without layer cache
+```
+
+Both commands accept an optional `[dir]` argument to target a different directory.
+
+## SSH Agent
+
+`devcont` forwards your SSH agent socket into the container via `$SSH_AUTH_SOCK`
+automatically — no key copying needed.
+
+## Configuration
+
+`~/.config/devcont/config.toml`:
+
+```toml
+# "docker" (default), "podman", "nerdctl", or "apple" (macOS only)
+provider = "docker"
+
+# Dotfiles to copy into the container (paths relative to $HOME)
+dotfiles = [".zshrc", ".config/nvim"]
+```
+
+`~/.gitconfig` is always copied when present.
+
+## Supported Engines
+
+docker, docker-compose, podman, podman-compose, nerdctl, apple (macOS only)
+
+### Podman Container Runtime
+
+Podman is a daemonless, open source, Linux-native tool designed to make it easy to find, run, build, and share containerized applications. Devcont provides enhanced Podman support with rootless mode detection, configurable user namespaces, and optimized performance.
+
+**Basic Usage:**
+
+```toml
+# ~/.config/devcont/config.toml
+provider = "podman"
+```
+
+**Advanced Configuration:**
+
+```toml
+# Example: Configure Podman for rootless mode with custom settings
+[podman]
+userns_mode = "keep-id"      # User namespace mode: "keep-id", "host", or "auto"
+disable_selinux = true      # Disable SELinux labeling for better compatibility
+```
+
+**Features:**
+
+1. **Rootless Support** - Automatic detection and optimization for rootless Podman installations
+2. **User Namespace Configuration** - Configurable user namespace modes for different security requirements
+3. **SELinux Control** - Toggle SELinux labeling based on your security needs
+4. **Availability Detection** - Automatic verification that Podman is installed and running
+5. **Performance Optimization** - Optimized command execution with proper environment setup
+6. **Full devcontainer.json Support** - Complete compatibility with the Dev Containers specification
+
+**Configuration Options:**
+
+| Option | Values | Default | Description |
+|--------|--------|---------|-------------|
+| `userns_mode` | `"keep-id"`, `"host"`, `"auto"` | `"keep-id"` | User namespace mode for container isolation |
+| `disable_selinux` | `true`, `false` | `true` | Disable SELinux labeling for compatibility |
+
+**Best Practices:**
+
+### Rootless Podman
+
+For best results with rootless Podman:
+
+```bash
+# Install Podman in rootless mode
+curl -fsSL https://get.rpmfusion.org | bash
+sudo dnf install -y podman
+
+# Set up rootless storage
+podman system migrate
+
+# Configure linger for the user
+sudo loginctl enable-linger $(whoami)
+```
+
+### Security Configuration
+
+For enhanced security in rootful environments:
+
+```toml
+# ~/.config/devcont/config.toml
+[podman]
+userns_mode = "keep-id"
+disable_selinux = false  # Keep SELinux enabled for rootful
+```
+
+### Troubleshooting
+
+**Common Issues and Solutions:**
+
+1. **Permission denied errors**
+   - Ensure proper storage setup: `podman system migrate`
+   - Check user namespace configuration
+   - Verify `/etc/subuid` and `/etc/subgid` are properly configured
+
+2. **Podman not detected**
+   - Verify Podman is installed: `podman --version`
+   - Check Podman service is running: `podman info`
+   - Ensure Podman is in your PATH
+
+3. **SELinux conflicts**
+   - Try disabling SELinux: `disable_selinux = true`
+   - Check SELinux context: `ls -Z`
+   - Review audit logs: `ausearch -m AVC -ts recent`
+
+4. **Rootless network issues**
+   - Configure slirp4netns: `podman machine init`
+   - Check firewall settings
+   - Verify network namespace configuration
+
+**Limitations:**
+
+- **Podman Machine (macOS/Windows):** Limited support for Podman Machine VMs
+- **User Namespaces:** Requires proper system configuration (`/etc/subuid`, `/etc/subgid`)
+- **Storage Drivers:** Performance varies by storage driver configuration
+- **Networking:** Rootless networking has some limitations compared to rootful
+
+### Nerdctl (containerd)
+
+Nerdctl is a Docker-compatible CLI for containerd. It provides a familiar Docker-like experience while using containerd as the container runtime, making it popular in Kubernetes environments.
+
+```toml
+# ~/.config/devcont/config.toml
+provider = "nerdctl"
+```
+
+**Requirements:**
+- `nerdctl` CLI installed
+- `containerd` service running
+
+**Features:**
+- Docker-compatible CLI commands
+- Full devcontainer.json specification support
+- Automatic SSH agent forwarding
+- Build support via BuildKit
+
+### Apple Container Runtime
+
+Apple's container runtime is supported on macOS 14.0+ (Sonoma) and provides native Linux container support optimized for Apple Silicon. To use Apple container:
+
+```toml
+# ~/.config/devcont/config.toml
+provider = "apple"
+```
+
+**Requirements:**
+- macOS 14.0+ (Sonoma or later)
+- Apple Silicon (M1/M2) recommended
+- Local Network access enabled in Security & Privacy settings
+- `container` CLI installed (part of macOS)
+
+**Features:**
+- Native Linux container support on macOS
+- Optimized for Apple Silicon performance
+- Integrated with macOS virtualization framework
+- Automatic SSH agent forwarding
+- Full devcontainer.json specification support
+
+**Limitations:**
+- macOS only (not available on Linux/Windows)
+- Requires macOS Sonoma or later
+- Some Linux distributions may have compatibility limitations
+
+## Supported `devcontainer.json` Fields
+
+| Field | Notes |
+|---|---|
+| `name` | required |
+| `image` | pull a pre-built image |
+| `build.dockerfile`, `build.args` | build from a Dockerfile |
+| `forwardPorts` | host↔container port mapping |
+| `remoteEnv` | environment variables injected at runtime |
+| `remoteUser` | user inside the container (default: `root`) |
+| `workspaceFolder` | working directory (default: `/workspace`) |
+| `dockerComposeFile` + `service` | compose mode |
+| `runArgs` | extra `docker/podman create` arguments |
+| `overrideCommand` | keep container alive with a sleep loop |
+| `shutdownAction` | `none` / `stopContainer` / `stopCompose` |
+| `mounts` | additional bind/volume mounts |
+| `initializeCommand` | host — before container creation |
+| `onCreateCommand` | container — after first create |
+| `updateContentCommand` | container — after content update |
+| `postCreateCommand` | container — after first create (post-setup) |
+| `postStartCommand` | container — after each start |
+| `postAttachCommand` | container — after each attach |
+
+Hooks accept a string (`sh -c` form) or an array (no shell interpolation).

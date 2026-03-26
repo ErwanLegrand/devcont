@@ -1,0 +1,113 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug executable 'devcont'",
+			"cargo": {
+				"args": [
+					"build",
+					"--bin=devcont",
+					"--package=devcont"
+				],
+				"filter": {
+					"name": "devcont",
+					"kind": "bin"
+				}
+			},
+			"args": [],
+			"cwd": "${workspaceFolder}",
+			"env": {
+				"RUST_BACKTRACE": "1"
+			}
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug library tests",
+			"cargo": {
+				"args": [
+					"test",
+					"--lib",
+					"--no-run",
+					"--package=devcont"
+				],
+				"filter": {
+					"name": "devcont",
+					"kind": "lib"
+				}
+			},
+			"args": [],
+			"cwd": "${workspaceFolder}",
+			"env": {
+				"RUST_BACKTRACE": "1",
+				"RUST_LOG": "debug"
+			}
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug specific test",
+			"cargo": {
+				"args": [
+					"test",
+					"--no-run",
+					"--package=devcont"
+				],
+				"filter": {
+					"name": "devcont",
+					"kind": "lib"
+				}
+			},
+			"args": ["${input:testName}"],
+			"cwd": "${workspaceFolder}",
+			"env": {
+				"RUST_BACKTRACE": "1"
+			}
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug examples",
+			"cargo": {
+				"args": [
+					"build",
+					"--example=${input:exampleName}",
+					"--package=devcont"
+				],
+				"filter": {
+					"name": "${input:exampleName}",
+					"kind": "example"
+				}
+			},
+			"args": [],
+			"cwd": "${workspaceFolder}",
+			"env": {
+				"RUST_BACKTRACE": "1"
+			}
+		},
+		{
+			"type": "lldb",
+			"request": "attach",
+			"name": "Attach to running process",
+			"pid": "${command:pickProcess}",
+			"env": {
+				"RUST_BACKTRACE": "1"
+			}
+		}
+	],
+	"inputs": [
+		{
+			"id": "testName",
+			"type": "promptString",
+			"description": "Test name filter (e.g., test_my_function)"
+		},
+		{
+			"id": "exampleName",
+			"type": "promptString",
+			"description": "Example name (e.g., basic_usage)",
+			"default": "basic_usage"
+		}
+	]
+}

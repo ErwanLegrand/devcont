@@ -1,35 +1,13 @@
-# Rust
-target/
-Cargo.lock
-
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-
-# Environment files
-.env
-.env.local
-.env.*.local
-
-# Temporary files
-*.tmp
-*.temp
+/target
+.idea
 tmp/
 
-# Build artifacts
-debug/
-release/
-
-# Test coverage
-*.profraw
-*.profdata
-coverage/
+# Host dotfiles bind-mounted by devcontainer
+.bash_profile
+.bashrc
+.gitconfig
+.gitmodules
+.profile
+.ripgreprc
+.zprofile
+.zshrc

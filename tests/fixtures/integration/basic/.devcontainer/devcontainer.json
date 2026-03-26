@@ -1,0 +1,9 @@
+{
+    "name": "basic",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "remoteUser": "root",
+    "overrideCommand": true,
+    "workspaceFolder": "/workspace"
+}

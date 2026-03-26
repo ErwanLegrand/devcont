@@ -1,58 +1,44 @@
-# Canonical Dependency Versions
+# Dependencies
 
-This file is the **authoritative version list** for all Rust template dependencies.
-When updating a dependency version, update it here first, then propagate to all templates.
+Documents all runtime and development dependencies and the rationale for each.
 
-## Version Table
+## Runtime
 
-| Crate | Version | Notes |
-|-------|---------|-------|
-| `criterion` | `0.5` | Benchmarking framework; 0.5 adds async support and improved output |
-| `thiserror` | `2.0` | Derive macro for error types; 2.0 uses `#[from]` proc-macro v2 syntax |
-| `tokio` | `1.x` (latest stable) | Async runtime; require at minimum `1.36` for `tokio::task::spawn_blocking` improvements |
-| `axum` | `0.8.x` | HTTP framework built on hyper 1.x; 0.8 is the first hyper-1.x-compatible release |
-| `serde` | `1.x` | Serialization framework; `1.0` has been stable for years  stay on `1.0` |
-| `anyhow` | `1.0` | Error propagation helper; complements `thiserror` for application-level errors |
-| `clap` | `4.x` | CLI argument parsing; `4.0` introduces derive API improvements |
-| `tracing` | `0.1` | Structured logging and diagnostics |
-| `tracing-subscriber` | `0.3` | Subscriber implementations for `tracing` |
+| Crate | Version | Purpose |
+|-------|---------|---------|
+| [clap](https://crates.io/crates/clap) | 4.x | CLI argument parsing — derive API, subcommand routing |
+| [serde](https://crates.io/crates/serde) | 1.x | Serialization framework used by serde_json and toml |
+| [serde_json](https://crates.io/crates/serde_json) | 1.x | JSON deserialization (used internally by json5) |
+| [json-five](https://crates.io/crates/json-five) | 0.3.x | Parse `devcontainer.json` — supports comments and trailing commas per the spec |
+| [toml](https://crates.io/crates/toml) | 1.0.x | Parse user config at `~/.config/devcont/config.toml` |
+| [directories](https://crates.io/crates/directories) | 6.x | OS-appropriate config/data directory resolution (XDG on Linux, etc.) |
+| [shellexpand](https://crates.io/crates/shellexpand) | 3.x | `~` and `$VAR` expansion in user-provided directory paths |
+| [tinytemplate](https://crates.io/crates/tinytemplate) | 1.x | `docker-compose.yml` template rendering for compose providers |
+| [colored](https://crates.io/crates/colored) | 3.x | Colored terminal output for the command echo feature |
+| [anyhow](https://crates.io/crates/anyhow) | 1.x | Application-level error propagation with human-readable context chains |
+| [thiserror](https://crates.io/crates/thiserror) | 2.x | Derive macro for typed domain error enums (`src/error.rs`) |
+| [tracing](https://crates.io/crates/tracing) | 0.1.x | Structured diagnostic logging — replaces `eprintln!` in library code |
+| [tracing-subscriber](https://crates.io/crates/tracing-subscriber) | 0.3.x | Subscriber with env-filter for `RUST_LOG`-based log level control |
 
-## Rationale
+## xtask
 
-### criterion 0.5
-Version 0.5 adds native async benchmark support, removes the dependency on `rayon`
-for parallelism, and produces cleaner HTML reports. All templates should use 0.5
-rather than the older 0.4 series.
+| Crate | Version | Purpose |
+|-------|---------|---------|
+| [clap](https://crates.io/crates/clap) | 4.x | CLI argument parsing for xtask subcommands |
+| [anyhow](https://crates.io/crates/anyhow) | 1.x | Error propagation in task runner |
+| [duct](https://crates.io/crates/duct) | 1.1.x | Shell command execution with piping support |
+| [toml](https://crates.io/crates/toml) | 1.0.x | Parse workspace Cargo.toml for metadata |
 
-### thiserror 2.0
-Version 2.0 switches to the proc-macro v2 API, reducing compile times and adding
-support for `#[error(transparent)]` improvements. The API is backwards-compatible
-with 1.x for most use cases. All templates standardise on 2.0.
+## Dev Tools (installed in CI and dev container)
 
-### tokio 1.x
-The `1.x` series is stable and long-supported. Specify the lowest compatible minor
-version in each template to maximise consumer compatibility, but test against the
-latest stable minor release.
+| Tool | Purpose |
+|------|---------|
+| [cargo-llvm-cov](https://crates.io/crates/cargo-llvm-cov) | LLVM-based code coverage — enforces >80% threshold in CI |
+| [cargo-deny](https://crates.io/crates/cargo-deny) | Dependency audit: license compliance + security advisories |
 
-### axum 0.8.x
-The 0.8 series targets hyper 1.x (which is a major rewrite). Templates must not mix
-axum 0.7.x (hyper 0.x) with axum 0.8.x dependencies. Use `0.8` and pin minor as
-needed.
+## Intentionally Excluded
 
-### serde 1.x
-The serde `1.x` release train has been stable since 2017. Always use `1.0` and let
-Cargo resolve the latest compatible patch version. Avoid pre-release or `2.x` when
-it becomes available until ecosystem adoption is proven.
-
-## Update Process
-
-1. Decide on new canonical version here in `DEPENDENCIES.md`.
-2. Update `[workspace.dependencies]` in `rust-dev-template/Cargo.toml`.
-3. Run `cargo update -p <crate>` in `rust-dev-template/` to lock the new version.
-4. Propagate to:
-   - `rust-xtask-template/Cargo.toml`
-   - `rust-axum-server-template/Cargo.toml`
-   - `rust-pre-commit-template/Cargo.toml` (if applicable)
-   - `rust-base-template/Cargo.toml` (if applicable)
-5. Run `cargo update -p <crate>` in each updated template directory.
-6. Commit with `chore(deps): bump <crate> to <version> across all templates`.
+| Crate | Reason |
+|-------|--------|
+| proptest / criterion | Property-based testing and benchmarks deferred to dedicated testing track |
+| cargo-audit | Superseded by `cargo-deny` which covers both licenses and advisories |
