@@ -1982,4 +1982,94 @@ mod tests {
             "probe_running() should propagate engine errors"
         );
     }
+
+    // --- compose_path_and_service tests ---
+
+    fn compose_config(compose_file: &str) -> Config {
+        json_five::from_str(&format!(
+            r#"{{ "name": "t", "dockerComposeFile": "{compose_file}", "service": "app" }}"#
+        ))
+        .expect("compose config should parse")
+    }
+
+    #[test]
+    fn compose_path_nested_layout_resolves_against_devcontainer_dir() {
+        // When devcontainer.json is at .devcontainer/devcontainer.json,
+        // config_dir is <workspace>/.devcontainer and the compose file must
+        // be resolved as <workspace>/.devcontainer/compose.yml.
+        let config = compose_config("compose.yml");
+        let config_dir = Path::new("/ws/.devcontainer");
+        let (path, service) = compose_path_and_service(config_dir, &config).unwrap();
+        assert_eq!(path, "/ws/.devcontainer/compose.yml");
+        assert_eq!(service, "app");
+    }
+
+    #[test]
+    fn compose_path_root_layout_resolves_against_workspace_root() {
+        // When devcontainer.json is at .devcontainer.json (workspace root),
+        // config_dir is <workspace> and the compose file must be resolved as
+        // <workspace>/compose.yml — NOT <workspace>/.devcontainer/compose.yml.
+        let config = compose_config("compose.yml");
+        let config_dir = Path::new("/ws");
+        let (path, service) = compose_path_and_service(config_dir, &config).unwrap();
+        assert_eq!(path, "/ws/compose.yml");
+        assert_eq!(service, "app");
+    }
+
+    // --- config_dir tests ---
+
+    #[test]
+    fn devcontainer_load_records_config_dir_nested() {
+        // When .devcontainer/devcontainer.json is used, config_dir must be
+        // the absolute directory containing it (i.e. <workspace>/.devcontainer/).
+        // fixtures_dir exists for reference; actual test uses a tempdir
+        let _fixtures_dir = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures"));
+        // The standard fixture at tests/fixtures/devcontainer.json isn't at .devcontainer/
+        // so we use a helper: build the path manually with make_devcontainer_with_provider.
+        // For the load() path we need real files — use the test fixture workspace.
+        // Create a temp workspace with a .devcontainer/devcontainer.json.
+        let ws = tempfile::tempdir().expect("tempdir");
+        let dc_dir = ws.path().join(".devcontainer");
+        std::fs::create_dir_all(&dc_dir).expect("create .devcontainer");
+        std::fs::write(
+            dc_dir.join("devcontainer.json"),
+            r#"{"name":"nested-test","image":"alpine"}"#,
+        )
+        .expect("write devcontainer.json");
+
+        let dc = Devcontainer::load(ws.path()).expect("load should succeed for nested layout");
+        assert_eq!(
+            dc.config_dir, dc_dir,
+            "config_dir for nested layout must be <workspace>/.devcontainer"
+        );
+    }
+
+    #[test]
+    fn devcontainer_load_records_config_dir_root() {
+        // When .devcontainer.json is at the workspace root, config_dir must be
+        // the workspace root itself.
+        let ws = tempfile::tempdir().expect("tempdir");
+        std::fs::write(
+            ws.path().join(".devcontainer.json"),
+            r#"{"name":"root-test","image":"alpine"}"#,
+        )
+        .expect("write .devcontainer.json");
+
+        let dc = Devcontainer::load(ws.path()).expect("load should succeed for root layout");
+        assert_eq!(
+            dc.config_dir,
+            ws.path(),
+            "config_dir for root layout must be the workspace root"
+        );
+    }
+
+    #[test]
+    fn make_devcontainer_with_provider_sets_config_dir() {
+        // Validate that the internal constructor helper also accepts a config_dir.
+        let config = config_minimal();
+        let provider = Box::new(MockProvider::new());
+        let dir = PathBuf::from("/ws/.devcontainer");
+        let dc = make_devcontainer_with_config_dir(config, provider, dir.clone());
+        assert_eq!(dc.config_dir, dir);
+    }
 }
