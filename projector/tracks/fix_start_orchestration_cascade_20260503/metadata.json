@@ -1,0 +1,8 @@
+{
+  "track_id": "fix_start_orchestration_cascade_20260503",
+  "type": "bug",
+  "status": "new",
+  "created_at": "2026-05-02T22:51:31Z",
+  "updated_at": "2026-05-02T22:51:31Z",
+  "description": "devcont start runs build/create/start/restart/attach/stop unconditionally because Provider methods return io::Result<bool> where false means non-zero exit, and ? does not propagate the false. Cascading errors mask the original failure."
+}

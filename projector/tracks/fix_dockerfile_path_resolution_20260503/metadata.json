@@ -1,0 +1,8 @@
+{
+  "track_id": "fix_dockerfile_path_resolution_20260503",
+  "type": "bug",
+  "status": "new",
+  "created_at": "2026-05-02T22:51:31Z",
+  "updated_at": "2026-05-02T22:51:31Z",
+  "description": "build.dockerfile is resolved relative to the workspace root instead of the directory containing devcontainer.json — every spec-compliant devcontainer.json fails."
+}
