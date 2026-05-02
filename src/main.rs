@@ -52,6 +52,19 @@ enum CliCommand {
         #[arg(long)]
         hook_timeout: Option<u32>,
     }, // end Start
+    /// Print the deterministic container name for the dev container and exit.
+    ///
+    /// Reads devcontainer.json without starting the container or running any hooks.
+    ///
+    /// Exit codes:
+    ///   0 — name determined and printed.
+    ///   2 — devcontainer.json could not be loaded (diagnostic on stderr).
+    ///   3 — config loaded but name could not be derived.
+    ContainerName {
+        // -- container-name variant --
+        /// Optional project directory path (defaults to current directory).
+        dir: Option<String>,
+    }, // end ContainerName
 } // end CliCommand
 /// Route parsed CLI to the appropriate handler.
 fn dispatch(parsed: &Cli) -> std::io::Result<()> {
@@ -88,6 +101,9 @@ fn dispatch(parsed: &Cli) -> std::io::Result<()> {
                 *hook_timeout,
             )?;
         } // handled rebuild
+        Some(CliCommand::ContainerName { dir }) => {
+            commands::container_name::run(dir.as_deref());
+        } // handled container-name
         None => commands::start::run(None, false, false, false, None)?,
     } // match dispatch
     Ok(()) // dispatch result
