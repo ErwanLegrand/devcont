@@ -1,0 +1,6 @@
+{
+  "name": "Inspect Project",
+  "image": "alpine",
+  "initializeCommand": "__devcont_test_hook_must_not_run__",
+  "workspaceFolder": "/workspace"
+}

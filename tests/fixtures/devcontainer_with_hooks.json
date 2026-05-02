@@ -1,0 +1,5 @@
+{
+  "name": "hook-project",
+  "image": "alpine",
+  "initializeCommand": "__devcont_test_hook_must_not_run__"
+}

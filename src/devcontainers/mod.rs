@@ -150,6 +150,59 @@ fn confirm_and_run_host_hook(
     exec_host_hook(hook, timeout_secs)
 }
 
+/// Lightweight snapshot of a devcontainer configuration obtained without
+/// building a container runtime provider or executing any host hooks.
+///
+/// Used by the `container-name` and `info` subcommands, which are
+/// read-only and must never trigger `initializeCommand` or any other
+/// side-effectful operation.
+pub struct DevcontainerInspection {
+    /// The parsed `devcontainer.json` configuration.
+    config: Config,
+    /// The directory that contains the resolved `devcontainer.json` file.
+    ///
+    /// - For the nested form (`.devcontainer/devcontainer.json`) this is the
+    ///   `.devcontainer/` subdirectory.
+    /// - For the root form (`.devcontainer.json`) this is the project root.
+    config_dir: PathBuf,
+    /// The container engine name derived from user settings (e.g. `"docker"`).
+    engine: String,
+}
+
+impl DevcontainerInspection {
+    /// Return the deterministic container name produced by `safe_name()`.
+    ///
+    /// # Errors
+    /// Returns an error when the project name cannot be mapped to an ASCII
+    /// container name (see [`Config::safe_name`]).
+    #[must_use]
+    pub fn container_name(&self) -> String {
+        // safe_name errors are surfaced at load time, so this cannot fail here.
+        // The value is pre-computed in Devcontainer::load_for_inspection.
+        self.config
+            .safe_name()
+            .unwrap_or_else(|_| String::from("<invalid>"))
+    }
+
+    /// Return the directory that contains the resolved `devcontainer.json`.
+    #[must_use]
+    pub fn config_dir(&self) -> &std::path::Path {
+        &self.config_dir
+    }
+
+    /// Return the container engine name (e.g. `"docker"`, `"podman"`).
+    #[must_use]
+    pub fn engine(&self) -> &str {
+        &self.engine
+    }
+
+    /// Return a reference to the parsed configuration.
+    #[must_use]
+    pub fn config(&self) -> &Config {
+        &self.config
+    }
+}
+
 /// Represents a fully-loaded devcontainer ready for lifecycle operations
 /// (build, create, run, rebuild).
 pub struct Devcontainer {
@@ -166,6 +219,67 @@ pub struct Devcontainer {
 } // Devcontainer struct
 impl Devcontainer {
     // --- public API + private helpers ---
+    /// Parse `devcontainer.json` from `directory` without building a provider
+    /// or running any host hooks.
+    ///
+    /// This is the entry point for the `container-name` and `info` subcommands.
+    /// It performs only:
+    /// 1. Locating and parsing `devcontainer.json`.
+    /// 2. Deriving the container name via `safe_name()`.
+    /// 3. Reading user settings to determine the engine name.
+    ///
+    /// No subprocess is ever spawned, so `initializeCommand` and other host
+    /// hooks are never executed.
+    ///
+    /// # Errors
+    /// Returns an error if the config file is missing, cannot be read, fails to
+    /// parse, or the container name cannot be derived from the project name.
+    pub fn load_for_inspection(directory: &Path) -> Result<DevcontainerInspection> {
+        use crate::settings::Provider as ProviderKind;
+
+        let nested_path = directory.join(".devcontainer").join("devcontainer.json");
+        let root_path = directory.join(".devcontainer.json");
+
+        let (parsed, config_dir) = match Config::parse(&nested_path) {
+            Ok(config) => {
+                let dir = nested_path
+                    .parent()
+                    .map_or_else(|| directory.to_path_buf(), Path::to_path_buf);
+                (config, dir)
+            }
+            Err(Error::Io(ref e)) if e.kind() == std::io::ErrorKind::NotFound => {
+                let config = Config::parse(&root_path).map_err(|e| match e {
+                    Error::Io(ref io_err) if io_err.kind() == std::io::ErrorKind::NotFound => {
+                        Error::InvalidConfig(
+                            "Could not find .devcontainer/devcontainer.json or .devcontainer.json"
+                                .to_string(),
+                        )
+                    }
+                    other => other,
+                })?;
+                (config, directory.to_path_buf())
+            }
+            Err(e) => return Err(e),
+        };
+
+        // Validate that a container name can be derived before returning.
+        parsed.safe_name()?;
+
+        let user_settings = Settings::load()?;
+        let engine = match &user_settings.provider {
+            ProviderKind::Docker => "docker",
+            ProviderKind::Podman => "podman",
+            ProviderKind::Apple => "apple",
+            ProviderKind::Nerdctl => "nerdctl",
+        };
+
+        Ok(DevcontainerInspection {
+            config: parsed,
+            config_dir,
+            engine: engine.to_string(),
+        })
+    } // end fn load_for_inspection
+
     /// Load a dev container from `directory`, resolving the config file and
     /// selecting the appropriate container provider based on user settings.
     ///
@@ -1412,6 +1526,66 @@ mod tests {
         assert!(
             result.is_err(),
             "single parent traversal should be rejected"
+        );
+    }
+
+    // --- load_for_inspection ---
+
+    /// `load_for_inspection` must succeed for a config that has `initializeCommand`
+    /// without actually running the hook command.
+    ///
+    /// The fixture command `__devcont_test_hook_must_not_run__` does not exist on
+    /// the system; if it were executed, the test would fail with an I/O error.
+    #[test]
+    fn load_for_inspection_does_not_run_initialize_command() {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/inspect_project");
+        // The fixture has initializeCommand set to a nonexistent program.
+        // If load_for_inspection() ran the hook, this call would return Err.
+        let inspection = Devcontainer::load_for_inspection(&dir);
+        // We expect Ok (with hooks not run).
+        // If it ran the hook, we'd get an Io error from trying to execute the
+        // nonexistent command.
+        match inspection {
+            Ok(_) => { /* success: hook was not executed */ }
+            Err(crate::error::Error::Io(ref e)) => {
+                // An Io error would suggest the hook was actually executed.
+                panic!(
+                    "load_for_inspection returned an Io error, which may mean a hook was executed: {e}"
+                );
+            }
+            Err(other) => panic!("unexpected error from load_for_inspection: {other}"),
+        }
+    }
+
+    /// `load_for_inspection` returns the container name computed by `safe_name()`.
+    #[test]
+    fn load_for_inspection_returns_correct_container_name() {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/inspect_project");
+        let inspection = Devcontainer::load_for_inspection(&dir)
+            .expect("load_for_inspection should succeed on the inspect_project fixture");
+        // The fixture name is "Inspect Project" → "devcont-inspect-project"
+        assert_eq!(inspection.container_name(), "devcont-inspect-project");
+    }
+
+    /// `load_for_inspection` surfaces `config_dir` as the `.devcontainer` subdirectory.
+    #[test]
+    fn load_for_inspection_config_dir_is_devcontainer_dir() {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/inspect_project");
+        let inspection =
+            Devcontainer::load_for_inspection(&dir).expect("load_for_inspection should succeed");
+        let config_dir = inspection.config_dir();
+        assert!(
+            config_dir.is_absolute(),
+            "config_dir must be an absolute path"
+        );
+        // For the nested form, config_dir should end with ".devcontainer"
+        assert!(
+            config_dir.ends_with(".devcontainer"),
+            "config_dir should be the .devcontainer subdirectory, got: {}",
+            config_dir.display()
         );
     }
 }
