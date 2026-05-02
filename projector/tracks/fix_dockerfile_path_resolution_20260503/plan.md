@@ -5,7 +5,7 @@ Spec: [./spec.md](./spec.md)
 
 ---
 
-## Phase 1: Investigation & Audit [checkpoint: pending]
+## Phase 1: Investigation & Audit [checkpoint: a1634d7]
 
 - [x] Task: Audit every path-bearing field for the same anchoring bug
     - [x] Confirm `resolve_dockerfile_path` mis-anchors when `context` is `None` (utils.rs:307). CONFIRMED: uses `workspace.to_path_buf()` as base instead of config_dir.
@@ -29,7 +29,7 @@ Spec: [./spec.md](./spec.md)
 
 ---
 
-## Phase 2: Plumb `config_dir` Through `Devcontainer`
+## Phase 2: Plumb `config_dir` Through `Devcontainer` [checkpoint: 3bcf4c5]
 
 - [ ] Task: Red Phase — add a unit test in `devcontainers/config.rs` (or sibling) asserting that `Config::load` (or whichever loader is used) returns/exposes the directory containing the loaded `devcontainer.json`.
 - [ ] Task: Green Phase — add a `config_dir: PathBuf` field (or method) on `Devcontainer`/`Config` populated from the loader. Treat it as the source of truth for path resolution downstream.
@@ -41,7 +41,7 @@ Spec: [./spec.md](./spec.md)
 
 ---
 
-## Phase 3: Fix `resolve_dockerfile_path` and Its Tests
+## Phase 3: Fix `resolve_dockerfile_path` and Its Tests [checkpoint: 2a327f6]
 
 - [x] Task: Red Phase — update tests at `provider/utils.rs:367–391` to encode the new (correct) behavior. Added 5 tests covering nested layout (config_dir = .devcontainer/), root layout, relative context, absolute context, absolute dockerfile. 2a327f6
 - [x] Task: Green Phase — rename `resolve_dockerfile_path`'s first parameter from `workspace` to `config_dir`. Callers already updated in Phase 2. 2a327f6
@@ -53,7 +53,7 @@ Spec: [./spec.md](./spec.md)
 
 ---
 
-## Phase 4: Fix `compose_path_and_service` and Sibling Callers
+## Phase 4: Fix `compose_path_and_service` and Sibling Callers [checkpoint: e225ad8]
 
 - [x] Task: Red Phase — add tests for both layouts (nested and root). Both pass since fix was already applied in Phase 2. e225ad8
 - [x] Task: Green Phase — `directory.join(".devcontainer").join(compose_file)` replaced with `config_dir.join(compose_file)` in Phase 2. `resolve_build_context` uses config_dir in Phase 2. e225ad8
@@ -65,7 +65,7 @@ Spec: [./spec.md](./spec.md)
 
 ---
 
-## Phase 5: End-to-End Regression Coverage
+## Phase 5: End-to-End Regression Coverage [checkpoint: ed60f1e]
 
 - [x] Task: Red Phase — add regression tests in tests/path_resolution_test.rs covering nested and root layouts for all path types. ed60f1e
 - [x] Task: Red Phase — added fixture for .devcontainer.json at workspace root with build.dockerfile and dockerComposeFile. ed60f1e
