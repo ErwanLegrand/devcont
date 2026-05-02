@@ -1060,23 +1060,26 @@ mod tests {
     }
 
     #[test]
-    fn resolve_build_context_defaults_to_directory() {
+    fn resolve_build_context_no_context_defaults_to_config_dir() {
+        // When build.context is absent, the context is the config_dir itself
+        // (the directory containing devcontainer.json), per the containers.dev spec.
         let config: Config =
             json_five::from_str(r#"{ "name": "test", "image": "alpine" }"#).unwrap();
-        let dir = std::path::Path::new("/workspace");
-        let ctx = resolve_build_context(dir, &config);
-        assert_eq!(ctx, "/workspace");
+        let config_dir = std::path::Path::new("/ws/.devcontainer");
+        let ctx = resolve_build_context(config_dir, &config);
+        assert_eq!(ctx, "/ws/.devcontainer");
     }
 
     #[test]
-    fn resolve_build_context_relative_context_joined_with_directory() {
+    fn resolve_build_context_relative_context_joined_with_config_dir() {
+        // Relative context is resolved relative to config_dir, not workspace root
         let config: Config = json_five::from_str(
             r#"{ "name": "test", "build": { "dockerfile": "Dockerfile", "context": "subdir" } }"#,
         )
         .unwrap();
-        let dir = std::path::Path::new("/workspace");
-        let ctx = resolve_build_context(dir, &config);
-        assert_eq!(ctx, "/workspace/subdir");
+        let config_dir = std::path::Path::new("/ws/.devcontainer");
+        let ctx = resolve_build_context(config_dir, &config);
+        assert_eq!(ctx, "/ws/.devcontainer/subdir");
     }
 
     #[test]
@@ -1085,8 +1088,8 @@ mod tests {
             r#"{ "name": "test", "build": { "dockerfile": "Dockerfile", "context": "/abs/ctx" } }"#,
         )
         .unwrap();
-        let dir = std::path::Path::new("/workspace");
-        let ctx = resolve_build_context(dir, &config);
+        let config_dir = std::path::Path::new("/ws/.devcontainer");
+        let ctx = resolve_build_context(config_dir, &config);
         assert_eq!(ctx, "/abs/ctx");
     }
 
@@ -1584,6 +1587,39 @@ mod tests {
             result.is_err(),
             "single parent traversal should be rejected"
         );
+    }
+
+    // --- compose_path_and_service tests ---
+
+    fn compose_config(compose_file: &str) -> Config {
+        json_five::from_str(&format!(
+            r#"{{ "name": "t", "dockerComposeFile": "{compose_file}", "service": "app" }}"#
+        ))
+        .expect("compose config should parse")
+    }
+
+    #[test]
+    fn compose_path_nested_layout_resolves_against_devcontainer_dir() {
+        // When devcontainer.json is at .devcontainer/devcontainer.json,
+        // config_dir is <workspace>/.devcontainer and the compose file must
+        // be resolved as <workspace>/.devcontainer/compose.yml.
+        let config = compose_config("compose.yml");
+        let config_dir = Path::new("/ws/.devcontainer");
+        let (path, service) = compose_path_and_service(config_dir, &config).unwrap();
+        assert_eq!(path, "/ws/.devcontainer/compose.yml");
+        assert_eq!(service, "app");
+    }
+
+    #[test]
+    fn compose_path_root_layout_resolves_against_workspace_root() {
+        // When devcontainer.json is at .devcontainer.json (workspace root),
+        // config_dir is <workspace> and the compose file must be resolved as
+        // <workspace>/compose.yml — NOT <workspace>/.devcontainer/compose.yml.
+        let config = compose_config("compose.yml");
+        let config_dir = Path::new("/ws");
+        let (path, service) = compose_path_and_service(config_dir, &config).unwrap();
+        assert_eq!(path, "/ws/compose.yml");
+        assert_eq!(service, "app");
     }
 
     // --- config_dir tests ---
