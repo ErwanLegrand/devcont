@@ -1811,4 +1811,115 @@ mod tests {
             "error message should mention 'stop', got: {msg}"
         );
     }
+
+    // --- probe_exists / probe_running ---
+
+    /// `probe_exists()` delegates to the provider's `exists()`.
+    /// With a mock that returns `true`, the result is `true`.
+    #[test]
+    fn probe_exists_returns_provider_result_true() {
+        let dc = make_devcontainer_with_provider(
+            config_minimal(),
+            Box::new(MockProvider::with_existing()),
+        );
+        assert!(
+            dc.probe_exists().expect("probe_exists should succeed"),
+            "probe_exists() should return true when provider returns true"
+        );
+    }
+
+    /// `probe_exists()` returns `false` when the provider does not have an existing container.
+    #[test]
+    fn probe_exists_returns_provider_result_false() {
+        let dc = make_devcontainer_with_provider(config_minimal(), Box::new(MockProvider::new()));
+        assert!(
+            !dc.probe_exists().expect("probe_exists should succeed"),
+            "probe_exists() should return false when provider returns false"
+        );
+    }
+
+    /// `probe_running()` returns `false` for the default mock (not running).
+    #[test]
+    fn probe_running_returns_provider_result_false() {
+        let dc = make_devcontainer_with_provider(config_minimal(), Box::new(MockProvider::new()));
+        assert!(
+            !dc.probe_running().expect("probe_running should succeed"),
+            "probe_running() should return false when provider returns false"
+        );
+    }
+
+    /// A `MockProvider` that simulates an I/O error on `exists()`.
+    struct ErrorProvider;
+
+    impl Provider for ErrorProvider {
+        fn build(&self, _: bool) -> std::io::Result<bool> {
+            Ok(false)
+        }
+        fn create(&self, _: &crate::provider::options::ContainerOptions) -> std::io::Result<bool> {
+            Ok(false)
+        }
+        fn start(&self) -> std::io::Result<bool> {
+            Ok(false)
+        }
+        fn stop(&self) -> std::io::Result<bool> {
+            Ok(false)
+        }
+        fn restart(&self) -> std::io::Result<bool> {
+            Ok(false)
+        }
+        fn attach(&self) -> std::io::Result<bool> {
+            Ok(false)
+        }
+        fn rm(&self) -> std::io::Result<bool> {
+            Ok(false)
+        }
+        fn exists(&self) -> std::io::Result<bool> {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "simulated engine error",
+            ))
+        }
+        fn running(&self) -> std::io::Result<bool> {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "simulated engine error",
+            ))
+        }
+        fn cp(&self, _: String, _: String) -> std::io::Result<bool> {
+            Ok(false)
+        }
+        fn exec(&self, _: String) -> std::io::Result<()> {
+            Ok(())
+        }
+        fn exec_capture(&self, _: &str) -> crate::error::Result<crate::provider::ExecOutput> {
+            Ok(crate::provider::ExecOutput {
+                stdout: Vec::new(),
+                stderr: Vec::new(),
+                exit_code: 0,
+            })
+        }
+        fn exec_raw(&self, _: &str, _: &[&str]) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+
+    /// `probe_exists()` propagates provider I/O errors.
+    #[test]
+    fn probe_exists_propagates_engine_error() {
+        let dc = make_devcontainer_with_provider(config_minimal(), Box::new(ErrorProvider));
+        assert!(
+            dc.probe_exists().is_err(),
+            "probe_exists() should propagate engine errors"
+        );
+    }
+
+    /// `probe_running()` propagates provider I/O errors.
+    #[test]
+    fn probe_running_propagates_engine_error() {
+        let dc = make_devcontainer_with_provider(config_minimal(), Box::new(ErrorProvider));
+        assert!(
+            dc.probe_running().is_err(),
+            "probe_running() should propagate engine errors"
+        );
+    }
 }
