@@ -18,6 +18,54 @@ devcont rebuild --no-cache  # rebuild without layer cache
 
 Both commands accept an optional `[dir]` argument to target a different directory.
 
+### Inspecting Containers (side-effect free)
+
+These commands read `devcontainer.json` without starting the container or running
+any hooks (`initializeCommand` etc.).
+
+```sh
+# Print the deterministic container name (one line, no trailing space)
+devcont container-name
+devcont container-name /path/to/project
+
+# Print a JSON document with container metadata
+devcont info
+devcont info /path/to/project
+
+# Skip the engine probe (omits exists/running; never invokes docker/podman)
+devcont info --no-probe
+```
+
+Example `info` output:
+
+```json
+{
+  "container": "devcont-myproject",
+  "image": "ubuntu:24.04",
+  "workspace": "/workspace",
+  "config_dir": "/path/to/.devcontainer",
+  "engine": "docker",
+  "exists": false,
+  "running": false
+}
+```
+
+Exit codes for `container-name`:
+
+| Code | Meaning |
+|------|---------|
+| `0`  | Name printed successfully |
+| `2`  | `devcontainer.json` not found or parse error |
+| `3`  | Config loaded but name could not be derived |
+
+Exit codes for `info`:
+
+| Code | Meaning |
+|------|---------|
+| `0`  | Info printed successfully |
+| `2`  | `devcontainer.json` not found or parse error |
+| non-zero | Engine probe failed (not applicable with `--no-probe`) |
+
 ## SSH Agent
 
 `devcont` forwards your SSH agent socket into the container via `$SSH_AUTH_SOCK`

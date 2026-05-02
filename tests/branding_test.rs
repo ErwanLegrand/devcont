@@ -32,3 +32,49 @@ fn help_output_references_devcont() {
         "--help output should reference 'devcont', got: {stdout}"
     );
 }
+
+/// `devcont --help` lists subcommands in the correct order:
+/// `rebuild`, `start`, `container-name`, `info`, `help`.
+#[test]
+fn help_lists_subcommands_in_correct_order() {
+    let output = Command::new(env!("CARGO_BIN_EXE_devcont"))
+        .arg("--help")
+        .output()
+        .expect("failed to run devcont --help");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    // Verify each subcommand is present.
+    for subcmd in &["rebuild", "start", "container-name", "info", "help"] {
+        assert!(
+            stdout.contains(subcmd),
+            "--help should list '{subcmd}', got: {stdout}"
+        );
+    }
+
+    // Verify order: rebuild < start < container-name < info < help.
+    let pos_rebuild = stdout.find("rebuild").expect("rebuild not found");
+    let pos_start = stdout.find("start").expect("start not found");
+    let pos_container_name = stdout
+        .find("container-name")
+        .expect("container-name not found");
+    let pos_info = stdout.find("info").expect("info not found");
+    let pos_help = stdout.rfind("help").expect("help not found");
+
+    assert!(
+        pos_rebuild < pos_start,
+        "rebuild should appear before start in --help"
+    );
+    assert!(
+        pos_start < pos_container_name,
+        "start should appear before container-name in --help"
+    );
+    assert!(
+        pos_container_name < pos_info,
+        "container-name should appear before info in --help"
+    );
+    assert!(
+        pos_info < pos_help,
+        "info should appear before help in --help"
+    );
+}
