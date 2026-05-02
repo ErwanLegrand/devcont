@@ -7,12 +7,12 @@ Spec: [./spec.md](./spec.md)
 
 ## Phase 1: Surface a Side-Effect-Free Inspection API
 
-- [ ] Task: Audit `Devcontainer` / `Config` for an existing way to load configuration **without** running `initializeCommand` or any other host hook. If absent, add a `Devcontainer::load_for_inspection` (or rename existing primitives) that performs only file parsing + `safe_name()` derivation.
-    - [ ] Red Phase — unit test asserting `load_for_inspection` does not call any host hook (use a stubbed config containing `initializeCommand` and assert it isn't executed).
-    - [ ] Green Phase — implement.
-- [ ] Task: Verify Coverage on the new inspection path.
-- [ ] Task: Pre-commit checks.
-- [ ] Task: Commit (`refactor(devcontainers): expose side-effect-free load path for inspection`).
+- [x] Task: Audit `Devcontainer` / `Config` for an existing way to load configuration **without** running `initializeCommand` or any other host hook. If absent, add a `Devcontainer::load_for_inspection` (or rename existing primitives) that performs only file parsing + `safe_name()` derivation. e4430db
+    - [x] Red Phase — unit test asserting `load_for_inspection` does not call any host hook (use a stubbed config containing `initializeCommand` and assert it isn't executed). e4430db
+    - [x] Green Phase — implement. e4430db
+- [x] Task: Verify Coverage on the new inspection path. e4430db
+- [x] Task: Pre-commit checks. e4430db
+- [x] Task: Commit (`refactor(devcontainers): expose side-effect-free load path for inspection`). e4430db
 - [ ] Task: Projector — User Manual Verification 'Phase 1: Surface a Side-Effect-Free Inspection API' (Protocol in workflow.md)
 
 ---

@@ -31,13 +31,13 @@ Spec: [./spec.md](./spec.md)
 
 ## Phase 2: Plumb `config_dir` Through `Devcontainer`
 
-- [x] Task: Red Phase — add a unit test in `devcontainers/config.rs` (or sibling) asserting that `Config::load` (or whichever loader is used) returns/exposes the directory containing the loaded `devcontainer.json`. 3bcf4c5
-- [x] Task: Green Phase — add a `config_dir: PathBuf` field (or method) on `Devcontainer`/`Config` populated from the loader. Treat it as the source of truth for path resolution downstream. 3bcf4c5
-- [x] Task: Refactor — replace any ad-hoc `directory.join(".devcontainer")` with a single helper or by passing `config_dir`. 3bcf4c5
-- [x] Task: Verify Coverage — all new code covered by tests added in red phase.
-- [x] Task: Pre-commit checks — fmt, clippy, check, test all pass.
-- [x] Task: Commit (`refactor(devcontainers): track config_dir for path resolution`). 3bcf4c5
-- [x] Task: Projector — User Manual Verification 'Phase 2: Plumb config_dir Through Devcontainer' (Protocol in workflow.md) — verified via automated tests for nested and root layouts.
+- [ ] Task: Red Phase — add a unit test in `devcontainers/config.rs` (or sibling) asserting that `Config::load` (or whichever loader is used) returns/exposes the directory containing the loaded `devcontainer.json`.
+- [ ] Task: Green Phase — add a `config_dir: PathBuf` field (or method) on `Devcontainer`/`Config` populated from the loader. Treat it as the source of truth for path resolution downstream.
+- [ ] Task: Refactor — replace any ad-hoc `directory.join(".devcontainer")` with a single helper or by passing `config_dir`.
+- [ ] Task: Verify Coverage — `cargo llvm-cov --workspace --html` ≥ 80% on changed lines.
+- [ ] Task: Pre-commit checks (`cargo fmt --check`, `cargo clippy -D warnings`, `cargo check`, `cargo test`, `cargo audit`).
+- [ ] Task: Commit (`refactor(devcontainers): track config_dir for path resolution`).
+- [ ] Task: Projector — User Manual Verification 'Phase 2: Plumb config_dir Through Devcontainer' (Protocol in workflow.md)
 
 ---
 
