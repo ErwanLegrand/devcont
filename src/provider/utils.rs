@@ -296,16 +296,21 @@ pub(crate) fn create_compose_override(
     Ok(ComposeOverrideGuard(path))
 }
 
-/// Resolve the Dockerfile path from config, relative to `context` if provided,
-/// otherwise relative to `workspace`.
+/// Resolve the Dockerfile path from config, anchored to `config_dir`.
 ///
-/// Absolute paths are returned unchanged.
+/// Per the containers.dev spec, paths in `devcontainer.json` are interpreted
+/// relative to the directory containing `devcontainer.json` (`config_dir`),
+/// not the workspace root.
 ///
-/// # Errors
-/// Returns an error if the resulting path would escape the workspace root (validated
-/// by the caller, e.g. via `validate_within_root`).
+/// - Absolute `dockerfile` → returned unchanged.
+/// - Absent `context` → `<config_dir>/<dockerfile>`.
+/// - Relative `context` → `<config_dir>/<context>/<dockerfile>`.
+/// - Absolute `context` → `<context>/<dockerfile>`.
+///
+/// Validation that the result stays within the workspace root is the
+/// caller's responsibility (see [`crate::devcontainers::paths::validate_within_root`]).
 pub(crate) fn resolve_dockerfile_path(
-    workspace: &std::path::Path,
+    config_dir: &std::path::Path,
     dockerfile: &str,
     context: Option<&str>,
 ) -> std::path::PathBuf {
@@ -318,10 +323,10 @@ pub(crate) fn resolve_dockerfile_path(
         if ctx_path.is_absolute() {
             ctx_path.to_path_buf()
         } else {
-            workspace.join(ctx_path)
+            config_dir.join(ctx_path)
         }
     } else {
-        workspace.to_path_buf()
+        config_dir.to_path_buf()
     };
     base.join(dockerfile_path)
 }
@@ -364,31 +369,55 @@ pub(crate) fn format_exec_error(exit_code: i32, stderr: &str) -> String {
 mod tests {
     use super::*;
     use std::os::unix::fs::PermissionsExt;
+    // Per the containers.dev spec, build.dockerfile is resolved relative to
+    // the directory containing devcontainer.json (config_dir), not relative
+    // to the workspace root.
+
     #[test]
-    fn resolve_dockerfile_no_context_relative_to_workspace() {
-        let ws = std::path::Path::new("/ws");
-        let result = resolve_dockerfile_path(ws, "Dockerfile", None);
+    fn resolve_dockerfile_no_context_relative_to_config_dir() {
+        // Common layout: devcontainer.json at .devcontainer/devcontainer.json
+        // → config_dir is <workspace>/.devcontainer
+        let config_dir = std::path::Path::new("/ws/.devcontainer");
+        let result = resolve_dockerfile_path(config_dir, "Dockerfile", None);
+        assert_eq!(
+            result,
+            std::path::PathBuf::from("/ws/.devcontainer/Dockerfile")
+        );
+    }
+
+    #[test]
+    fn resolve_dockerfile_no_context_root_layout_relative_to_workspace() {
+        // Alternative layout: devcontainer.json at workspace root (.devcontainer.json)
+        // → config_dir is the workspace root itself
+        let config_dir = std::path::Path::new("/ws");
+        let result = resolve_dockerfile_path(config_dir, "Dockerfile", None);
         assert_eq!(result, std::path::PathBuf::from("/ws/Dockerfile"));
     }
 
     #[test]
     fn resolve_dockerfile_with_relative_context() {
-        let ws = std::path::Path::new("/ws");
-        let result = resolve_dockerfile_path(ws, "Dockerfile", Some("subdir"));
-        assert_eq!(result, std::path::PathBuf::from("/ws/subdir/Dockerfile"));
+        // Relative context is resolved relative to config_dir
+        let config_dir = std::path::Path::new("/ws/.devcontainer");
+        let result = resolve_dockerfile_path(config_dir, "Dockerfile", Some("subdir"));
+        assert_eq!(
+            result,
+            std::path::PathBuf::from("/ws/.devcontainer/subdir/Dockerfile")
+        );
     }
 
     #[test]
     fn resolve_dockerfile_with_absolute_context() {
-        let ws = std::path::Path::new("/ws");
-        let result = resolve_dockerfile_path(ws, "Dockerfile", Some("/other/ctx"));
+        // Absolute context overrides config_dir
+        let config_dir = std::path::Path::new("/ws/.devcontainer");
+        let result = resolve_dockerfile_path(config_dir, "Dockerfile", Some("/other/ctx"));
         assert_eq!(result, std::path::PathBuf::from("/other/ctx/Dockerfile"));
     }
 
     #[test]
     fn resolve_dockerfile_absolute_path_returned_unchanged() {
-        let ws = std::path::Path::new("/ws");
-        let result = resolve_dockerfile_path(ws, "/abs/Dockerfile", Some("ctx"));
+        // Absolute dockerfile path is returned as-is regardless of context
+        let config_dir = std::path::Path::new("/ws/.devcontainer");
+        let result = resolve_dockerfile_path(config_dir, "/abs/Dockerfile", Some("ctx"));
         assert_eq!(result, std::path::PathBuf::from("/abs/Dockerfile"));
     }
 
