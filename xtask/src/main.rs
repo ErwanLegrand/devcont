@@ -127,9 +127,11 @@ fn run_setup() -> anyhow::Result<()> {
             ),
         }
 
-        drop(Command::new("pre-commit")
-            .args(["install", "--hook-type", "commit-msg"])
-            .status());
+        drop(
+            Command::new("pre-commit")
+                .args(["install", "--hook-type", "commit-msg"])
+                .status(),
+        );
     }
 
     // Check Rust components
@@ -142,9 +144,11 @@ fn run_setup() -> anyhow::Result<()> {
             let stdout = String::from_utf8_lossy(&output.stdout);
             if !stdout.contains(component) {
                 println!("Installing {component}...");
-                drop(Command::new("rustup")
-                    .args(["component", "add", component])
-                    .status());
+                drop(
+                    Command::new("rustup")
+                        .args(["component", "add", component])
+                        .status(),
+                );
             }
         }
     }

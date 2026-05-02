@@ -1812,6 +1812,66 @@ mod tests {
         );
     }
 
+    // --- load_for_inspection ---
+
+    /// `load_for_inspection` must succeed for a config that has `initializeCommand`
+    /// without actually running the hook command.
+    ///
+    /// The fixture command `__devcont_test_hook_must_not_run__` does not exist on
+    /// the system; if it were executed, the test would fail with an I/O error.
+    #[test]
+    fn load_for_inspection_does_not_run_initialize_command() {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/inspect_project");
+        // The fixture has initializeCommand set to a nonexistent program.
+        // If load_for_inspection() ran the hook, this call would return Err.
+        let inspection = Devcontainer::load_for_inspection(&dir);
+        // We expect Ok (with hooks not run).
+        // If it ran the hook, we'd get an Io error from trying to execute the
+        // nonexistent command.
+        match inspection {
+            Ok(_) => { /* success: hook was not executed */ }
+            Err(crate::error::Error::Io(ref e)) => {
+                // An Io error would suggest the hook was actually executed.
+                panic!(
+                    "load_for_inspection returned an Io error, which may mean a hook was executed: {e}"
+                );
+            }
+            Err(other) => panic!("unexpected error from load_for_inspection: {other}"),
+        }
+    }
+
+    /// `load_for_inspection` returns the container name computed by `safe_name()`.
+    #[test]
+    fn load_for_inspection_returns_correct_container_name() {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/inspect_project");
+        let inspection = Devcontainer::load_for_inspection(&dir)
+            .expect("load_for_inspection should succeed on the inspect_project fixture");
+        // The fixture name is "Inspect Project" → "devcont-inspect-project"
+        assert_eq!(inspection.container_name(), "devcont-inspect-project");
+    }
+
+    /// `load_for_inspection` surfaces `config_dir` as the `.devcontainer` subdirectory.
+    #[test]
+    fn load_for_inspection_config_dir_is_devcontainer_dir() {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/inspect_project");
+        let inspection =
+            Devcontainer::load_for_inspection(&dir).expect("load_for_inspection should succeed");
+        let config_dir = inspection.config_dir();
+        assert!(
+            config_dir.is_absolute(),
+            "config_dir must be an absolute path"
+        );
+        // For the nested form, config_dir should end with ".devcontainer"
+        assert!(
+            config_dir.ends_with(".devcontainer"),
+            "config_dir should be the .devcontainer subdirectory, got: {}",
+            config_dir.display()
+        );
+    }
+
     // --- probe_exists / probe_running ---
 
     /// `probe_exists()` delegates to the provider's `exists()`.
@@ -1848,30 +1908,30 @@ mod tests {
         );
     }
 
-    /// A `MockProvider` that simulates an I/O error on `exists()`.
+    /// A `Provider` that simulates an I/O error on `exists()` and `running()`.
     struct ErrorProvider;
 
     impl Provider for ErrorProvider {
-        fn build(&self, _: bool) -> std::io::Result<bool> {
-            Ok(false)
+        fn build(&self, _: bool) -> std::io::Result<()> {
+            Ok(())
         }
-        fn create(&self, _: &crate::provider::options::ContainerOptions) -> std::io::Result<bool> {
-            Ok(false)
+        fn create(&self, _: &crate::provider::options::ContainerOptions) -> std::io::Result<()> {
+            Ok(())
         }
-        fn start(&self) -> std::io::Result<bool> {
-            Ok(false)
+        fn start(&self) -> std::io::Result<()> {
+            Ok(())
         }
-        fn stop(&self) -> std::io::Result<bool> {
-            Ok(false)
+        fn stop(&self) -> std::io::Result<()> {
+            Ok(())
         }
-        fn restart(&self) -> std::io::Result<bool> {
-            Ok(false)
+        fn restart(&self) -> std::io::Result<()> {
+            Ok(())
         }
-        fn attach(&self) -> std::io::Result<bool> {
-            Ok(false)
+        fn attach(&self) -> std::io::Result<()> {
+            Ok(())
         }
-        fn rm(&self) -> std::io::Result<bool> {
-            Ok(false)
+        fn rm(&self) -> std::io::Result<()> {
+            Ok(())
         }
         fn exists(&self) -> std::io::Result<bool> {
             Err(std::io::Error::new(
@@ -1885,8 +1945,8 @@ mod tests {
                 "simulated engine error",
             ))
         }
-        fn cp(&self, _: String, _: String) -> std::io::Result<bool> {
-            Ok(false)
+        fn cp(&self, _: String, _: String) -> std::io::Result<()> {
+            Ok(())
         }
         fn exec(&self, _: String) -> std::io::Result<()> {
             Ok(())

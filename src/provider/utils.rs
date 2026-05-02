@@ -190,9 +190,7 @@ pub(crate) fn run_and_check(command: &mut Command) -> Result<()> {
 /// Returns an error if the command fails to spawn or exits with a non-zero
 /// status.
 pub(crate) fn run_step(step: &str, command: &mut Command) -> Result<()> {
-    run_and_check(command).map_err(|e| {
-        std::io::Error::new(e.kind(), format!("{step}: {e}"))
-    })
+    run_and_check(command).map_err(|e| std::io::Error::new(e.kind(), format!("{step}: {e}")))
 }
 
 #[derive(Serialize, Debug)]

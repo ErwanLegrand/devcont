@@ -6,9 +6,7 @@ use super::IMAGE_NAMESPACE;
 use super::Provider;
 use super::options::ContainerOptions;
 use super::print_command;
-use super::utils::{
-    apply_common_create_args, check_container_status, inject_ssh_agent, run_step,
-};
+use super::utils::{apply_common_create_args, check_container_status, inject_ssh_agent, run_step};
 use super::{ExecOutput, output_to_exec_result};
 use crate::provider::docker::BuildSource;
 
