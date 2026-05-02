@@ -1,4 +1,5 @@
 pub mod container_name; // container-name sub-command handler
+pub mod info; // info sub-command handler
 pub mod rebuild; // rebuild sub-command handler
 pub mod start; // start sub-command handler
 

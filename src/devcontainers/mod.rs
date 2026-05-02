@@ -527,6 +527,26 @@ impl Devcontainer {
         let remote = remote_home_dir(&self.config.remote_user).join(".gitconfig");
         self.copy(&local_gc, &remote.to_string_lossy())
     } // end fn copy_gitconfig
+
+    /// Return `true` if the container currently exists (running or stopped).
+    ///
+    /// Delegates to [`Provider::exists`].
+    ///
+    /// # Errors
+    /// Fails when the underlying inspect command cannot be spawned.
+    pub fn probe_exists(&self) -> std::io::Result<bool> {
+        self.provider.exists()
+    } // end probe_exists
+
+    /// Return `true` if the container is currently running.
+    ///
+    /// Delegates to [`Provider::running`].
+    ///
+    /// # Errors
+    /// Fails when the underlying inspect command cannot be spawned.
+    pub fn probe_running(&self) -> std::io::Result<bool> {
+        self.provider.running()
+    } // end probe_running
 } // impl Devcontainer
 
 /// Determine the home directory for a given remote user inside the container.

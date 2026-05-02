@@ -65,6 +65,23 @@ enum CliCommand {
         /// Optional project directory path (defaults to current directory).
         dir: Option<String>,
     }, // end ContainerName
+    /// Print a JSON document with metadata about the dev container.
+    ///
+    /// Fields: container, image, workspace, config_dir, engine.
+    /// With --no-probe: omits exists and running (no engine subprocess).
+    /// Without --no-probe: also includes exists and running from engine probe.
+    ///
+    /// Exit codes:
+    ///   0 — info printed successfully.
+    ///   2 — devcontainer.json could not be loaded (diagnostic on stderr).
+    Info {
+        // -- info variant --
+        /// Optional project directory path (defaults to current directory).
+        dir: Option<String>,
+        /// Skip the engine probe; omits `exists` and `running` from the output.
+        #[arg(long)]
+        no_probe: bool,
+    }, // end Info
 } // end CliCommand
 /// Route parsed CLI to the appropriate handler.
 fn dispatch(parsed: &Cli) -> std::io::Result<()> {
@@ -104,6 +121,9 @@ fn dispatch(parsed: &Cli) -> std::io::Result<()> {
         Some(CliCommand::ContainerName { dir }) => {
             commands::container_name::run(dir.as_deref());
         } // handled container-name
+        Some(CliCommand::Info { dir, no_probe }) => {
+            commands::info::run(dir.as_deref(), *no_probe);
+        } // handled info
         None => commands::start::run(None, false, false, false, None)?,
     } // match dispatch
     Ok(()) // dispatch result
