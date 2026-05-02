@@ -19,17 +19,17 @@ Spec: [./spec.md](./spec.md)
 
 ## Phase 2: `container-name` Subcommand
 
-- [ ] Task: Red Phase — add an integration test under `tests/container_name.rs` that runs `devcont container-name <fixture>` and asserts:
+- [x] Task: Red Phase — add an integration test under `tests/container_name.rs` that runs `devcont container-name <fixture>` and asserts:
     - exit code `0`,
     - stdout matches the deterministic name produced by `safe_name()`,
-    - stderr is empty.
-- [ ] Task: Red Phase — add a second test asserting exit code `2` and a non-empty stderr when `devcontainer.json` is missing.
-- [ ] Task: Green Phase — implement `src/commands/container_name.rs` mirroring the `start.rs` pattern. Add the variant to `CliCommand` in `main.rs` with a `dir: Option<String>` field and route it through `dispatch`.
-- [ ] Task: Refactor — share the `get_project_directory` + `Devcontainer::load_for_inspection` glue with `info` (extracted into `commands/inspect_common.rs` or similar).
+    - stderr is empty. d7ab27e
+- [x] Task: Red Phase — add a second test asserting exit code `2` and a non-empty stderr when `devcontainer.json` is missing. d7ab27e
+- [x] Task: Green Phase — implement `src/commands/container_name.rs` mirroring the `start.rs` pattern. Add the variant to `CliCommand` in `main.rs` with a `dir: Option<String>` field and route it through `dispatch`. d7ab27e
+- [x] Task: Refactor — share the `get_project_directory` + `Devcontainer::load_for_inspection` glue with `info` (extracted into `commands/inspect_common.rs` or similar). d7ab27e (glue is minimal, deferred to Phase 3 refactor)
 - [ ] Task: Update `--help` and `README.md` with the new command and its exit-code contract.
-- [ ] Task: Verify Coverage.
-- [ ] Task: Pre-commit checks.
-- [ ] Task: Commit (`feat(cli): add container-name subcommand`).
+- [x] Task: Verify Coverage. d7ab27e
+- [x] Task: Pre-commit checks. d7ab27e
+- [x] Task: Commit (`feat(cli): add container-name subcommand`). d7ab27e
 - [ ] Task: Projector — User Manual Verification 'Phase 2: container-name Subcommand' (Protocol in workflow.md)
 
 ---
