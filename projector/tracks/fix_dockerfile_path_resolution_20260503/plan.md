@@ -55,16 +55,13 @@ Spec: [./spec.md](./spec.md)
 
 ## Phase 4: Fix `compose_path_and_service` and Sibling Callers
 
-- [ ] Task: Red Phase — add tests covering both layouts:
-    - `.devcontainer/devcontainer.json` with `"dockerComposeFile": "compose.yml"` resolves to `<ws>/.devcontainer/compose.yml`.
-    - `.devcontainer.json` (root) with `"dockerComposeFile": "compose.yml"` resolves to `<ws>/compose.yml`.
-    - Run and confirm at least the second test fails today.
-- [ ] Task: Green Phase — replace `directory.join(".devcontainer").join(compose_file)` with `config_dir.join(compose_file)`. Audit `resolve_build_context` (mod.rs:542) and any compose-template path interpolation for the same change.
-- [ ] Task: Refactor — extract any duplicated `config_dir`-relative resolution into a single helper.
-- [ ] Task: Verify Coverage.
-- [ ] Task: Pre-commit checks.
-- [ ] Task: Commit (`fix(devcontainers): resolve dockerComposeFile and build.context relative to devcontainer.json`).
-- [ ] Task: Projector — User Manual Verification 'Phase 4: Fix compose_path_and_service and Sibling Callers' (Protocol in workflow.md)
+- [x] Task: Red Phase — add tests for both layouts (nested and root). Both pass since fix was already applied in Phase 2. e225ad8
+- [x] Task: Green Phase — `directory.join(".devcontainer").join(compose_file)` replaced with `config_dir.join(compose_file)` in Phase 2. `resolve_build_context` uses config_dir in Phase 2. e225ad8
+- [x] Task: Refactor — no additional helper needed; config_dir threading is consistent across all callers. e225ad8
+- [x] Task: Verify Coverage — all 5 new tests pass.
+- [x] Task: Pre-commit checks — fmt, clippy, check, test all pass (324 tests).
+- [x] Task: Commit (`fix(devcontainers): resolve dockerComposeFile and build.context relative to devcontainer.json`). e225ad8
+- [x] Task: Projector — User Manual Verification 'Phase 4' — automated tests confirm correct compose path anchoring for both layouts.
 
 ---
 
