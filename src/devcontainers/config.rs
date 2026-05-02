@@ -596,7 +596,7 @@ mod tests {
         let path = dir.join("devcont_test_invalid.json");
         std::fs::write(&path, "{ not : valid : json }").expect("write test file");
         let result = Config::parse(&path);
-        let _ = std::fs::remove_file(&path);
+        drop(std::fs::remove_file(&path));
         assert!(result.is_err(), "invalid JSON5 should return Err");
         assert!(
             matches!(result.unwrap_err(), Error::ConfigParse(_)),
@@ -610,7 +610,7 @@ mod tests {
         let path = dir.join("devcont_test_noname.json");
         std::fs::write(&path, r#"{ "image": "alpine" }"#).expect("write test file");
         let result = Config::parse(&path);
-        let _ = std::fs::remove_file(&path);
+        drop(std::fs::remove_file(&path));
         assert!(
             result.is_err(),
             "config without 'name' field should return Err"
@@ -627,7 +627,7 @@ mod tests {
         )
         .expect("write test file");
         let result = Config::parse(&path);
-        let _ = std::fs::remove_file(&path);
+        drop(std::fs::remove_file(&path));
         assert!(result.is_ok(), "unknown fields should be silently ignored");
     }
 

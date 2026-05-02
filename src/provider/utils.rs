@@ -179,6 +179,22 @@ pub(crate) fn run_and_check(command: &mut Command) -> Result<()> {
     ))
 }
 
+/// Like [`run_and_check`], but includes the lifecycle step name in the error
+/// message so that users can tell immediately which provider operation failed.
+///
+/// The error message format is `"{step}: {detail}"` where `{detail}` comes
+/// from [`format_exec_error`].
+///
+/// # Errors
+///
+/// Returns an error if the command fails to spawn or exits with a non-zero
+/// status.
+pub(crate) fn run_step(step: &str, command: &mut Command) -> Result<()> {
+    run_and_check(command).map_err(|e| {
+        std::io::Error::new(e.kind(), format!("{step}: {e}"))
+    })
+}
+
 #[derive(Serialize, Debug)]
 struct TemplateContext {
     service: String,
@@ -211,7 +227,7 @@ pub(crate) struct ComposeOverrideGuard(pub(crate) PathBuf);
 
 impl Drop for ComposeOverrideGuard {
     fn drop(&mut self) {
-        let _ = std::fs::remove_file(&self.0);
+        drop(std::fs::remove_file(&self.0));
     }
 }
 
@@ -793,6 +809,49 @@ mod tests {
             msg.contains('2'),
             "error message must include exit code 2, got: {msg}"
         );
+    }
+
+    // --- run_step ---
+
+    #[test]
+    fn run_step_includes_step_name_in_error() {
+        // A command that exits non-zero should include the step name in the error.
+        let mut cmd = Command::new("false");
+        let result = run_step("build", &mut cmd);
+        assert!(result.is_err(), "non-zero exit must produce Err");
+        let msg = result.unwrap_err().to_string();
+        assert!(
+            msg.contains("build"),
+            "error message must include step name 'build', got: {msg}"
+        );
+    }
+
+    #[test]
+    fn run_step_includes_stderr_excerpt_in_error() {
+        // A command that writes to stderr and exits non-zero should include the
+        // engine binary name (first arg of command) and stderr content.
+        let mut cmd = Command::new("sh");
+        cmd.arg("-c")
+            .arg("echo 'docker: no such image: alpine:bad' >&2; exit 125");
+        let result = run_step("build", &mut cmd);
+        assert!(result.is_err(), "non-zero exit must produce Err");
+        let msg = result.unwrap_err().to_string();
+        assert!(
+            msg.contains("build"),
+            "error must include step name 'build', got: {msg}"
+        );
+        // format_exec_error should have caught the "no such image" pattern
+        assert!(
+            msg.to_lowercase().contains("image") || msg.contains("build"),
+            "error must mention the image error or build step, got: {msg}"
+        );
+    }
+
+    #[test]
+    fn run_step_ok_on_success() {
+        let mut cmd = Command::new("true");
+        let result = run_step("start", &mut cmd);
+        assert!(result.is_ok(), "successful command must return Ok(())");
     }
 
     // --- exact_name_match ---

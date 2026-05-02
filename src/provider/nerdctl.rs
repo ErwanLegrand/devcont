@@ -7,7 +7,7 @@ use super::Provider;
 use super::options::ContainerOptions;
 use super::print_command;
 use super::utils::{
-    apply_common_create_args, check_container_status, inject_ssh_agent, run_and_check,
+    apply_common_create_args, check_container_status, inject_ssh_agent, run_step,
 };
 use super::{ExecOutput, output_to_exec_result};
 use crate::provider::docker::BuildSource;
@@ -164,42 +164,42 @@ impl Nerdctl {
 impl Provider for Nerdctl {
     fn build(&self, use_cache: bool) -> Result<()> {
         let mut command = self.build_build_command(use_cache);
-        run_and_check(&mut command)
+        run_step("build", &mut command)
     }
 
     fn create(&self, opts: &ContainerOptions) -> Result<()> {
         let mut command = self.build_create_command(opts);
-        run_and_check(&mut command)
+        run_step("create", &mut command)
     }
 
     fn start(&self) -> Result<()> {
         let mut command = Command::new(&self.command);
         command.arg("start").arg(&self.name);
-        run_and_check(&mut command)
+        run_step("start", &mut command)
     }
 
     fn stop(&self) -> Result<()> {
         let mut command = Command::new(&self.command);
         command.arg("stop").arg(&self.name);
-        run_and_check(&mut command)
+        run_step("stop", &mut command)
     }
 
     fn restart(&self) -> Result<()> {
         let mut command = Command::new(&self.command);
         command.arg("restart").arg(&self.name);
-        run_and_check(&mut command)
+        run_step("restart", &mut command)
     }
 
     fn attach(&self) -> Result<()> {
         let mut command = Command::new(&self.command);
         command.arg("attach").arg(&self.name);
-        run_and_check(&mut command)
+        run_step("attach", &mut command)
     }
 
     fn rm(&self) -> Result<()> {
         let mut command = Command::new(&self.command);
         command.arg("rm").arg(&self.name);
-        run_and_check(&mut command)
+        run_step("rm", &mut command)
     }
 
     fn exists(&self) -> Result<bool> {
@@ -216,7 +216,7 @@ impl Provider for Nerdctl {
             .arg("cp")
             .arg(source)
             .arg(format!("{}:{}", &self.name, destination));
-        run_and_check(&mut command)
+        run_step("cp", &mut command)
     }
 
     fn exec(&self, cmd: String) -> Result<()> {

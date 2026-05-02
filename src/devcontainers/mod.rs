@@ -76,8 +76,8 @@ fn exec_host_hook(hook: &OneOrMany, timeout_secs: Option<u32>) -> std::io::Resul
             // SIGKILL directly — no SIGTERM grace period. Lifecycle hooks are
             // expected to be short-lived; a two-stage kill adds complexity for
             // minimal practical benefit in this context.
-            let _ = child.kill();
-            let _ = child.wait();
+            drop(child.kill());
+            drop(child.wait());
             return Err(std::io::Error::new(
                 std::io::ErrorKind::TimedOut,
                 format!("hook timed out after {secs}s"),
@@ -1753,7 +1753,7 @@ mod tests {
         // When start fails, restart and attach must not be called.
         let mock = MockProvider::failing_at(FailStep::Start);
         let dc = make_devcontainer_with_provider(config_no_hooks(), Box::new(mock));
-        let _ = dc.run(true, true, true, true);
+        drop(dc.run(true, true, true, true));
         // The provider was moved into the box; we can only observe the observable error.
         // The test above already asserts the error is returned; this variant documents intent.
     }

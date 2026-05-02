@@ -1,7 +1,7 @@
 use super::options::ContainerOptions;
 use super::print_command;
 use super::utils::{
-    apply_common_create_args, check_container_status, inject_ssh_agent, run_and_check,
+    apply_common_create_args, check_container_status, inject_ssh_agent, run_step,
 };
 use super::{ExecOutput, IMAGE_NAMESPACE, Provider, output_to_exec_result};
 use crate::provider::docker::BuildSource;
@@ -247,36 +247,36 @@ impl Podman {
 impl Provider for Podman {
     fn build(&self, use_cache: bool) -> io::Result<()> {
         let mut cmd = self.build_build_command(use_cache);
-        run_and_check(&mut cmd)
+        run_step("build", &mut cmd)
     } // build
     fn create(&self, opts: &ContainerOptions) -> io::Result<()> {
         let mut cmd = self.build_create_command(opts);
-        run_and_check(&mut cmd)
+        run_step("create", &mut cmd)
     } // create
     fn start(&self) -> io::Result<()> {
         let mut cmd = self.podman_command();
         cmd.arg("start").arg(&self.name);
-        run_and_check(&mut cmd)
+        run_step("start", &mut cmd)
     } // start
     fn stop(&self) -> io::Result<()> {
         let mut cmd = self.podman_command();
         cmd.arg("stop").arg(&self.name);
-        run_and_check(&mut cmd)
+        run_step("stop", &mut cmd)
     } // stop
     fn restart(&self) -> io::Result<()> {
         let mut cmd = self.podman_command();
         cmd.arg("restart").arg(&self.name);
-        run_and_check(&mut cmd)
+        run_step("restart", &mut cmd)
     } // restart
     fn attach(&self) -> io::Result<()> {
         let mut cmd = self.podman_command();
         cmd.arg("attach").arg(&self.name);
-        run_and_check(&mut cmd)
+        run_step("attach", &mut cmd)
     } // attach
     fn rm(&self) -> io::Result<()> {
         let mut cmd = self.podman_command();
         cmd.arg("rm").arg(&self.name);
-        run_and_check(&mut cmd)
+        run_step("rm", &mut cmd)
     } // rm
     fn exists(&self) -> io::Result<bool> {
         check_container_status(&mut self.podman_command(), &self.name, true)
@@ -288,7 +288,7 @@ impl Provider for Podman {
         let target = format!("{}:{}", &self.name, destination);
         let mut cmd = self.podman_command();
         cmd.arg("cp").arg(source).arg(&target);
-        run_and_check(&mut cmd)
+        run_step("cp", &mut cmd)
     } // cp
     fn exec(&self, cmd: String) -> io::Result<()> {
         let mut proc = self.podman_command();

@@ -155,7 +155,7 @@ mod tests {
             assert_eq!(v["container"], "test-container");
             assert!(v["timestamp"].is_number(), "timestamp must be a number");
         }
-        let _ = std::fs::remove_file(&path);
+        drop(std::fs::remove_file(&path));
     }
 
     #[test]
@@ -171,7 +171,7 @@ mod tests {
         assert_eq!(v["event"], "hook_executed");
         assert_eq!(v["hook"], "postCreateCommand");
         assert_eq!(v["command"], "npm install");
-        let _ = std::fs::remove_file(&path);
+        drop(std::fs::remove_file(&path));
     }
 
     #[test]
@@ -186,7 +186,7 @@ mod tests {
         logger.log(&AuditEvent::ContainerStart {
             container: "x".to_string(),
         });
-        let _ = std::fs::remove_dir(&tmp);
+        drop(std::fs::remove_dir(&tmp));
     }
 
     #[test]
@@ -221,7 +221,7 @@ mod tests {
         let meta = std::fs::metadata(&path).expect("file should exist");
         let mode = meta.permissions().mode() & 0o777;
         assert_eq!(mode, 0o600, "log file must be owner-only (0o600)");
-        let _ = std::fs::remove_file(&path);
+        drop(std::fs::remove_file(&path));
     }
 
     #[test]
@@ -245,6 +245,6 @@ mod tests {
         let content = std::fs::read_to_string(&path).expect("log file should exist");
         let lines: Vec<_> = content.lines().collect();
         assert_eq!(lines.len(), 2, "two events → two lines");
-        let _ = std::fs::remove_file(&path);
+        drop(std::fs::remove_file(&path));
     }
 }

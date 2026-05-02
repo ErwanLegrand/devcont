@@ -1,6 +1,6 @@
 use super::options::ContainerOptions;
 use super::print_command;
-use super::utils::{ComposeOverrideGuard, create_compose_override, run_and_check};
+use super::utils::{ComposeOverrideGuard, create_compose_override, run_step};
 use super::{ExecOutput, Provider, output_to_exec_result};
 use std::{collections::HashMap, io, path::Path, process::Command};
 /// Podman Compose provider -- manages containers via `podman-compose`.
@@ -190,7 +190,7 @@ impl Provider for PodmanCompose {
         let guard = self.create_docker_compose()?;
         let mut cmd = Command::new(&self.command);
         cmd.args(self.build_command_args(&guard.0, use_cache));
-        run_and_check(&mut cmd)
+        run_step("build", &mut cmd)
     } // build
     fn create(&self, _opts: &ContainerOptions) -> io::Result<()> {
         Ok(())
@@ -199,31 +199,31 @@ impl Provider for PodmanCompose {
         let guard = self.create_docker_compose()?;
         let mut cmd = Command::new(&self.command);
         cmd.args(self.start_command_args(&guard.0));
-        run_and_check(&mut cmd)
+        run_step("start", &mut cmd)
     } // start
     fn stop(&self) -> io::Result<()> {
         let guard = self.create_docker_compose()?;
         let mut cmd = Command::new(&self.command);
         cmd.args(self.stop_command_args(&guard.0));
-        run_and_check(&mut cmd)
+        run_step("stop", &mut cmd)
     } // stop
     fn restart(&self) -> io::Result<()> {
         let guard = self.create_docker_compose()?;
         let mut cmd = Command::new(&self.command);
         cmd.args(self.restart_command_args(&guard.0));
-        run_and_check(&mut cmd)
+        run_step("restart", &mut cmd)
     } // restart
     fn attach(&self) -> io::Result<()> {
         let guard = self.create_docker_compose()?;
         let mut cmd = Command::new(&self.command);
         cmd.args(self.attach_command_args(&guard.0));
-        run_and_check(&mut cmd)
+        run_step("attach", &mut cmd)
     } // attach
     fn rm(&self) -> io::Result<()> {
         let guard = self.create_docker_compose()?;
         let mut cmd = Command::new(&self.command);
         cmd.args(self.rm_args(&guard.0));
-        run_and_check(&mut cmd)
+        run_step("rm", &mut cmd)
     } // rm
     fn exists(&self) -> io::Result<bool> {
         // Use `podman ps -aq` with project + service label filters so this works even when
@@ -278,7 +278,7 @@ impl Provider for PodmanCompose {
             .arg("cp")
             .arg(source)
             .arg(format!("{container_id}:{destination}"));
-        run_and_check(&mut cp_cmd)
+        run_step("cp", &mut cp_cmd)
     } // cp
     fn exec_capture(&self, cmd: &str) -> crate::error::Result<ExecOutput> {
         let guard = self
