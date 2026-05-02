@@ -196,44 +196,44 @@ impl AppleContainer {
 }
 
 impl Provider for AppleContainer {
-    fn build(&self, use_cache: bool) -> Result<bool> {
+    fn build(&self, use_cache: bool) -> Result<()> {
         self.ensure_system_running()?;
         let mut command = self.build_build_command(use_cache);
         run_and_check(&mut command)
     }
 
-    fn create(&self, opts: &ContainerOptions) -> Result<bool> {
+    fn create(&self, opts: &ContainerOptions) -> Result<()> {
         self.ensure_system_running()?;
         let mut command = self.build_create_command(opts);
         run_and_check(&mut command)
     }
 
-    fn start(&self) -> Result<bool> {
+    fn start(&self) -> Result<()> {
         self.ensure_system_running()?;
         let mut command = Command::new(&self.command);
         command.arg("start").arg(&self.name);
         run_and_check(&mut command)
     }
 
-    fn stop(&self) -> Result<bool> {
+    fn stop(&self) -> Result<()> {
         let mut command = Command::new(&self.command);
         command.arg("stop").arg(&self.name);
         run_and_check(&mut command)
     }
 
-    fn restart(&self) -> Result<bool> {
+    fn restart(&self) -> Result<()> {
         let mut command = Command::new(&self.command);
         command.arg("restart").arg(&self.name);
         run_and_check(&mut command)
     }
 
-    fn attach(&self) -> Result<bool> {
+    fn attach(&self) -> Result<()> {
         let mut command = Command::new(&self.command);
         command.arg("attach").arg(&self.name);
         run_and_check(&mut command)
     }
 
-    fn rm(&self) -> Result<bool> {
+    fn rm(&self) -> Result<()> {
         let mut command = Command::new(&self.command);
         command.arg("rm").arg(&self.name);
         run_and_check(&mut command)
@@ -247,7 +247,7 @@ impl Provider for AppleContainer {
         check_container_status(&mut Command::new(&self.command), &self.name, false)
     }
 
-    fn cp(&self, source: String, destination: String) -> Result<bool> {
+    fn cp(&self, source: String, destination: String) -> Result<()> {
         let mut command = Command::new(&self.command);
         command
             .arg("cp")

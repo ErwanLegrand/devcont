@@ -154,17 +154,29 @@ pub(crate) fn apply_common_create_args(
     }
 }
 
-/// Print a command and run it, returning whether it exited successfully.
+/// Print a command, run it, and return `Ok(())` when it exits with status zero.
 ///
 /// This is the pattern used by `start()`, `stop()`, `restart()`, `attach()`,
 /// `rm()`, `build()`, `create()`, and `cp()` across all direct providers.
 ///
 /// # Errors
 ///
-/// Returns an error if the command fails to spawn.
-pub(crate) fn run_and_check(command: &mut Command) -> Result<bool> {
+/// Returns an error if the command fails to spawn or exits with a non-zero
+/// status.  The error message is formatted via
+/// [`format_exec_error`] so that common engine-level problems (image not
+/// found, daemon not running, …) surface a human-readable explanation.
+pub(crate) fn run_and_check(command: &mut Command) -> Result<()> {
     print_command(command);
-    Ok(command.status()?.success())
+    let output = command.output()?;
+    if output.status.success() {
+        return Ok(());
+    }
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let exit_code = output.status.code().unwrap_or(-1);
+    Err(std::io::Error::new(
+        std::io::ErrorKind::Other,
+        format_exec_error(exit_code, &stderr),
+    ))
 }
 
 #[derive(Serialize, Debug)]
@@ -756,19 +768,31 @@ mod tests {
     // --- run_and_check ---
 
     #[test]
-    fn run_and_check_returns_true_on_success() {
+    fn run_and_check_returns_ok_on_success() {
         let mut cmd = Command::new("true");
         let result = run_and_check(&mut cmd);
         assert!(result.is_ok());
-        assert!(result.unwrap());
     }
 
     #[test]
-    fn run_and_check_returns_false_on_failure() {
+    fn run_and_check_returns_err_on_failure() {
         let mut cmd = Command::new("false");
         let result = run_and_check(&mut cmd);
-        assert!(result.is_ok());
-        assert!(!result.unwrap());
+        assert!(result.is_err(), "non-zero exit must produce Err, not Ok");
+    }
+
+    #[test]
+    fn run_and_check_nonzero_exit_includes_exit_code() {
+        // `sh -c 'exit 2'` exits with code 2
+        let mut cmd = Command::new("sh");
+        cmd.arg("-c").arg("exit 2");
+        let result = run_and_check(&mut cmd);
+        assert!(result.is_err(), "exit code 2 must produce Err");
+        let msg = result.unwrap_err().to_string();
+        assert!(
+            msg.contains('2'),
+            "error message must include exit code 2, got: {msg}"
+        );
     }
 
     // --- exact_name_match ---

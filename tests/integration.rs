@@ -451,16 +451,10 @@ fn test_docker_build_and_create() {
     let _container_guard = ContainerGuard::new(&name);
     let _image_guard = ImageGuard::new(&image);
 
-    assert!(
-        provider.build(true).expect("build() failed"),
-        "build() should succeed"
-    );
-    assert!(
-        provider
-            .create(&ContainerOptions { remote_env: vec![] })
-            .expect("create() failed"),
-        "create() should succeed"
-    );
+    provider.build(true).expect("build() should succeed");
+    provider
+        .create(&ContainerOptions { remote_env: vec![] })
+        .expect("create() should succeed");
     assert!(
         provider.exists().expect("exists() failed"),
         "exists() should be true after create"
@@ -480,10 +474,7 @@ fn test_docker_start_and_running() {
     provider
         .create(&ContainerOptions { remote_env: vec![] })
         .expect("create() failed");
-    assert!(
-        provider.start().expect("start() failed"),
-        "start() should succeed"
-    );
+    provider.start().expect("start() should succeed");
     assert!(
         provider.running().expect("running() failed"),
         "running() should be true after start"
@@ -504,10 +495,7 @@ fn test_docker_running_returns_false_when_stopped() {
         .create(&ContainerOptions { remote_env: vec![] })
         .expect("create() failed");
     provider.start().expect("start() failed");
-    assert!(
-        provider.stop().expect("stop() failed"),
-        "stop() should succeed"
-    );
+    provider.stop().expect("stop() should succeed");
     assert!(
         !provider.running().expect("running() failed"),
         "running() should be false after stop"
@@ -528,10 +516,7 @@ fn test_docker_restart() {
         .create(&ContainerOptions { remote_env: vec![] })
         .expect("create() failed");
     provider.start().expect("start() failed");
-    assert!(
-        provider.restart().expect("restart() failed"),
-        "restart() should succeed"
-    );
+    provider.restart().expect("restart() should succeed");
     assert!(
         provider.running().expect("running() failed"),
         "running() should be true after restart"
@@ -579,12 +564,9 @@ fn test_docker_cp() {
     std::fs::write(&src, b"hello from host").expect("failed to write temp file");
 
     let dest = "/tmp/cp_test_file.txt".to_string();
-    assert!(
-        provider
-            .cp(src.to_string_lossy().into_owned(), dest.clone())
-            .expect("cp() failed"),
-        "cp() should succeed"
-    );
+    provider
+        .cp(src.to_string_lossy().into_owned(), dest.clone())
+        .expect("cp() should succeed");
     provider
         .exec(format!("test -f {dest}"))
         .expect("exec(): file should exist in container after cp");
@@ -609,7 +591,7 @@ fn test_docker_stop_and_rm() {
         .expect("create() failed");
     provider.start().expect("start() failed");
     provider.stop().expect("stop() failed");
-    assert!(provider.rm().expect("rm() failed"), "rm() should succeed");
+    provider.rm().expect("rm() should succeed");
     assert!(
         !provider.exists().expect("exists() failed"),
         "exists() should be false after rm"
@@ -638,20 +620,11 @@ fn test_compose_build_and_start() {
     let provider = load_compose_provider(&name);
     let _guard = ComposeGuard::new(&name);
 
-    assert!(
-        provider.build(true).expect("build() failed"),
-        "build() should succeed"
-    );
-    assert!(
-        provider
-            .create(&ContainerOptions { remote_env: vec![] })
-            .expect("create() failed"),
-        "create() should succeed (no-op for compose)"
-    );
-    assert!(
-        provider.start().expect("start() failed"),
-        "start() should succeed"
-    );
+    provider.build(true).expect("build() should succeed");
+    provider
+        .create(&ContainerOptions { remote_env: vec![] })
+        .expect("create() should succeed (no-op for compose)");
+    provider.start().expect("start() should succeed");
     assert!(
         provider.exists().expect("exists() failed"),
         "exists() should be true after start"
@@ -692,12 +665,9 @@ fn test_compose_cp() {
     std::fs::write(&src, b"hello from host").expect("failed to write temp file");
 
     let dest = "/tmp/compose_cp_file.txt".to_string();
-    assert!(
-        provider
-            .cp(src.to_string_lossy().into_owned(), dest.clone())
-            .expect("cp() failed"),
-        "cp() should succeed"
-    );
+    provider
+        .cp(src.to_string_lossy().into_owned(), dest.clone())
+        .expect("cp() should succeed");
     provider
         .exec(format!("test -f {dest}"))
         .expect("exec(): file should exist in container after cp");
@@ -714,10 +684,7 @@ fn test_compose_restart() {
 
     provider.build(true).expect("build() failed");
     provider.start().expect("start() failed");
-    assert!(
-        provider.restart().expect("restart() failed"),
-        "restart() should succeed"
-    );
+    provider.restart().expect("restart() should succeed");
     assert!(
         provider.running().expect("running() failed"),
         "running() should be true after restart"
@@ -735,7 +702,7 @@ fn test_compose_stop_and_rm() {
     provider.build(true).expect("build() failed");
     provider.start().expect("start() failed");
     provider.stop().expect("stop() failed");
-    assert!(provider.rm().expect("rm() failed"), "rm() should succeed");
+    provider.rm().expect("rm() should succeed");
     assert!(
         !provider.exists().expect("exists() failed"),
         "exists() should be false after rm"
@@ -765,16 +732,10 @@ fn test_podman_build_and_create() {
     let image = format!("devcont/{name}");
     let _guard = PodmanGuard::new(&name, &image);
 
-    assert!(
-        provider.build(true).expect("build() failed"),
-        "build() should succeed"
-    );
-    assert!(
-        provider
-            .create(&ContainerOptions { remote_env: vec![] })
-            .expect("create() failed"),
-        "create() should succeed"
-    );
+    provider.build(true).expect("build() should succeed");
+    provider
+        .create(&ContainerOptions { remote_env: vec![] })
+        .expect("create() should succeed");
     assert!(
         provider.exists().expect("exists() failed"),
         "exists() should be true after create"
@@ -793,10 +754,7 @@ fn test_podman_start_and_running() {
     provider
         .create(&ContainerOptions { remote_env: vec![] })
         .expect("create() failed");
-    assert!(
-        provider.start().expect("start() failed"),
-        "start() should succeed"
-    );
+    provider.start().expect("start() should succeed");
     assert!(
         provider.running().expect("running() failed"),
         "running() should be true after start"
@@ -816,10 +774,7 @@ fn test_podman_running_returns_false_when_stopped() {
         .create(&ContainerOptions { remote_env: vec![] })
         .expect("create() failed");
     provider.start().expect("start() failed");
-    assert!(
-        provider.stop().expect("stop() failed"),
-        "stop() should succeed"
-    );
+    provider.stop().expect("stop() should succeed");
     assert!(
         !provider.running().expect("running() failed"),
         "running() should be false after stop"
@@ -839,10 +794,7 @@ fn test_podman_restart() {
         .create(&ContainerOptions { remote_env: vec![] })
         .expect("create() failed");
     provider.start().expect("start() failed");
-    assert!(
-        provider.restart().expect("restart() failed"),
-        "restart() should succeed"
-    );
+    provider.restart().expect("restart() should succeed");
     assert!(
         provider.running().expect("running() failed"),
         "running() should be true after restart"
@@ -887,12 +839,9 @@ fn test_podman_cp() {
     std::fs::write(&src, b"hello from host").expect("failed to write temp file");
 
     let dest = "/tmp/podman_cp_test_file.txt".to_string();
-    assert!(
-        provider
-            .cp(src.to_string_lossy().into_owned(), dest.clone())
-            .expect("cp() failed"),
-        "cp() should succeed"
-    );
+    provider
+        .cp(src.to_string_lossy().into_owned(), dest.clone())
+        .expect("cp() should succeed");
     provider
         .exec(format!("test -f {dest}"))
         .expect("exec(): file should exist in container after cp");
@@ -914,7 +863,7 @@ fn test_podman_stop_and_rm() {
         .expect("create() failed");
     provider.start().expect("start() failed");
     provider.stop().expect("stop() failed");
-    assert!(provider.rm().expect("rm() failed"), "rm() should succeed");
+    provider.rm().expect("rm() should succeed");
     assert!(
         !provider.exists().expect("exists() failed"),
         "exists() should be false after rm"
@@ -951,20 +900,11 @@ fn test_podman_compose_build_and_start() {
         .into_owned();
     let _guard = PodmanComposeGuard::new(&name, &file);
 
-    assert!(
-        provider.build(true).expect("build() failed"),
-        "build() should succeed"
-    );
-    assert!(
-        provider
-            .create(&ContainerOptions { remote_env: vec![] })
-            .expect("create() failed"),
-        "create() should succeed (no-op for compose)"
-    );
-    assert!(
-        provider.start().expect("start() failed"),
-        "start() should succeed"
-    );
+    provider.build(true).expect("build() should succeed");
+    provider
+        .create(&ContainerOptions { remote_env: vec![] })
+        .expect("create() should succeed (no-op for compose)");
+    provider.start().expect("start() should succeed");
     assert!(
         provider.exists().expect("exists() failed"),
         "exists() should be true after start"
@@ -1021,12 +961,9 @@ fn test_podman_compose_cp() {
     std::fs::write(&src, b"hello from host").expect("failed to write temp file");
 
     let dest = "/tmp/pcompose_cp_file.txt".to_string();
-    assert!(
-        provider
-            .cp(src.to_string_lossy().into_owned(), dest.clone())
-            .expect("cp() failed"),
-        "cp() should succeed"
-    );
+    provider
+        .cp(src.to_string_lossy().into_owned(), dest.clone())
+        .expect("cp() should succeed");
     provider
         .exec(format!("test -f {dest}"))
         .expect("exec(): file should exist in container after cp");
@@ -1051,10 +988,7 @@ fn test_podman_compose_restart() {
 
     provider.build(true).expect("build() failed");
     provider.start().expect("start() failed");
-    assert!(
-        provider.restart().expect("restart() failed"),
-        "restart() should succeed"
-    );
+    provider.restart().expect("restart() should succeed");
     assert!(
         provider.running().expect("running() failed"),
         "running() should be true after restart"
@@ -1079,7 +1013,7 @@ fn test_podman_compose_stop_and_rm() {
     provider.build(true).expect("build() failed");
     provider.start().expect("start() failed");
     provider.stop().expect("stop() failed");
-    assert!(provider.rm().expect("rm() failed"), "rm() should succeed");
+    provider.rm().expect("rm() should succeed");
     assert!(
         !provider.exists().expect("exists() failed"),
         "exists() should be false after rm"

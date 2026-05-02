@@ -21,44 +21,51 @@ pub trait Provider {
     /// Build the container image. Pass `cache_enabled = false` to add `--no-cache`.
     ///
     /// # Errors
-    /// Fails when the underlying build command cannot be spawned or exits with an error.
-    fn build(&self, cache_enabled: bool) -> io::Result<bool>;
+    /// Fails when the underlying build command cannot be spawned or exits with a
+    /// non-zero status.
+    fn build(&self, cache_enabled: bool) -> io::Result<()>;
 
     /// Create the container with the given options.
     ///
     /// # Errors
-    /// Fails when the underlying create command cannot be spawned or exits with an error.
-    fn create(&self, opts: &ContainerOptions) -> io::Result<bool>;
+    /// Fails when the underlying create command cannot be spawned or exits with a
+    /// non-zero status.
+    fn create(&self, opts: &ContainerOptions) -> io::Result<()>;
 
     /// Start a stopped container.
     ///
     /// # Errors
-    /// Fails when the underlying start command cannot be spawned or exits with an error.
-    fn start(&self) -> io::Result<bool>;
+    /// Fails when the underlying start command cannot be spawned or exits with a
+    /// non-zero status.
+    fn start(&self) -> io::Result<()>;
 
     /// Stop a running container.
     ///
     /// # Errors
-    /// Fails when the underlying stop command cannot be spawned or exits with an error.
-    fn stop(&self) -> io::Result<bool>;
+    /// Fails when the underlying stop command cannot be spawned or exits with a
+    /// non-zero status.
+    fn stop(&self) -> io::Result<()>;
 
     /// Restart the container.
     ///
     /// # Errors
-    /// Fails when the underlying restart command cannot be spawned or exits with an error.
-    fn restart(&self) -> io::Result<bool>;
+    /// Fails when the underlying restart command cannot be spawned or exits with a
+    /// non-zero status.
+    fn restart(&self) -> io::Result<()>;
 
     /// Attach an interactive shell session to the container.
     ///
     /// # Errors
-    /// Fails when the underlying attach command cannot be spawned or exits with an error.
-    fn attach(&self) -> io::Result<bool>;
+    /// Fails when the underlying attach command cannot be spawned or exits with a
+    /// non-zero status.
+    fn attach(&self) -> io::Result<()>;
 
     /// Remove the container.
     ///
     /// # Errors
-    /// Fails when the underlying remove command cannot be spawned or exits with an error.
-    fn rm(&self) -> io::Result<bool>;
+    /// Fails when the underlying remove command cannot be spawned or exits with a
+    /// non-zero status.
+    fn rm(&self) -> io::Result<()>;
 
     /// Return `true` if the container exists (running or stopped).
     ///
@@ -75,8 +82,9 @@ pub trait Provider {
     /// Copy `source` (host path) into the container at `destination`.
     ///
     /// # Errors
-    /// Fails when the underlying copy command cannot be spawned or exits with an error.
-    fn cp(&self, source: String, destination: String) -> io::Result<bool>;
+    /// Fails when the underlying copy command cannot be spawned or exits with a
+    /// non-zero status.
+    fn cp(&self, source: String, destination: String) -> io::Result<()>;
 
     /// Execute a shell command inside the container via `sh -c`.
     ///

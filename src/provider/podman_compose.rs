@@ -186,40 +186,40 @@ impl PodmanCompose {
 } // impl PodmanCompose
 
 impl Provider for PodmanCompose {
-    fn build(&self, use_cache: bool) -> io::Result<bool> {
+    fn build(&self, use_cache: bool) -> io::Result<()> {
         let guard = self.create_docker_compose()?;
         let mut cmd = Command::new(&self.command);
         cmd.args(self.build_command_args(&guard.0, use_cache));
         run_and_check(&mut cmd)
     } // build
-    fn create(&self, _opts: &ContainerOptions) -> io::Result<bool> {
-        Ok(true)
+    fn create(&self, _opts: &ContainerOptions) -> io::Result<()> {
+        Ok(())
     }
-    fn start(&self) -> io::Result<bool> {
+    fn start(&self) -> io::Result<()> {
         let guard = self.create_docker_compose()?;
         let mut cmd = Command::new(&self.command);
         cmd.args(self.start_command_args(&guard.0));
         run_and_check(&mut cmd)
     } // start
-    fn stop(&self) -> io::Result<bool> {
+    fn stop(&self) -> io::Result<()> {
         let guard = self.create_docker_compose()?;
         let mut cmd = Command::new(&self.command);
         cmd.args(self.stop_command_args(&guard.0));
         run_and_check(&mut cmd)
     } // stop
-    fn restart(&self) -> io::Result<bool> {
+    fn restart(&self) -> io::Result<()> {
         let guard = self.create_docker_compose()?;
         let mut cmd = Command::new(&self.command);
         cmd.args(self.restart_command_args(&guard.0));
         run_and_check(&mut cmd)
     } // restart
-    fn attach(&self) -> io::Result<bool> {
+    fn attach(&self) -> io::Result<()> {
         let guard = self.create_docker_compose()?;
         let mut cmd = Command::new(&self.command);
         cmd.args(self.attach_command_args(&guard.0));
         run_and_check(&mut cmd)
     } // attach
-    fn rm(&self) -> io::Result<bool> {
+    fn rm(&self) -> io::Result<()> {
         let guard = self.create_docker_compose()?;
         let mut cmd = Command::new(&self.command);
         cmd.args(self.rm_args(&guard.0));
@@ -249,7 +249,7 @@ impl Provider for PodmanCompose {
         let text = String::from_utf8(out.stdout).unwrap_or_default();
         Ok(!text.trim().is_empty())
     } // running
-    fn cp(&self, source: String, destination: String) -> io::Result<bool> {
+    fn cp(&self, source: String, destination: String) -> io::Result<()> {
         // podman-compose has no native cp; find the service container via project label
         // and delegate to `podman cp`.
         let out = Command::new(&self.podman_command)
@@ -265,7 +265,13 @@ impl Provider for PodmanCompose {
         let raw_text = String::from_utf8(out.stdout).unwrap_or_default();
         let container_id = Self::extract_container_id(&raw_text).to_string();
         if container_id.is_empty() {
-            return Ok(false);
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!(
+                    "no running container found for service '{}' in project '{}'",
+                    self.service, self.name
+                ),
+            ));
         }
         let mut cp_cmd = Command::new(&self.podman_command);
         cp_cmd

@@ -245,35 +245,35 @@ impl Podman {
 } // impl Podman
 
 impl Provider for Podman {
-    fn build(&self, use_cache: bool) -> io::Result<bool> {
+    fn build(&self, use_cache: bool) -> io::Result<()> {
         let mut cmd = self.build_build_command(use_cache);
         run_and_check(&mut cmd)
     } // build
-    fn create(&self, opts: &ContainerOptions) -> io::Result<bool> {
+    fn create(&self, opts: &ContainerOptions) -> io::Result<()> {
         let mut cmd = self.build_create_command(opts);
         run_and_check(&mut cmd)
     } // create
-    fn start(&self) -> io::Result<bool> {
+    fn start(&self) -> io::Result<()> {
         let mut cmd = self.podman_command();
         cmd.arg("start").arg(&self.name);
         run_and_check(&mut cmd)
     } // start
-    fn stop(&self) -> io::Result<bool> {
+    fn stop(&self) -> io::Result<()> {
         let mut cmd = self.podman_command();
         cmd.arg("stop").arg(&self.name);
         run_and_check(&mut cmd)
     } // stop
-    fn restart(&self) -> io::Result<bool> {
+    fn restart(&self) -> io::Result<()> {
         let mut cmd = self.podman_command();
         cmd.arg("restart").arg(&self.name);
         run_and_check(&mut cmd)
     } // restart
-    fn attach(&self) -> io::Result<bool> {
+    fn attach(&self) -> io::Result<()> {
         let mut cmd = self.podman_command();
         cmd.arg("attach").arg(&self.name);
         run_and_check(&mut cmd)
     } // attach
-    fn rm(&self) -> io::Result<bool> {
+    fn rm(&self) -> io::Result<()> {
         let mut cmd = self.podman_command();
         cmd.arg("rm").arg(&self.name);
         run_and_check(&mut cmd)
@@ -284,7 +284,7 @@ impl Provider for Podman {
     fn running(&self) -> io::Result<bool> {
         check_container_status(&mut self.podman_command(), &self.name, false)
     } // running
-    fn cp(&self, source: String, destination: String) -> io::Result<bool> {
+    fn cp(&self, source: String, destination: String) -> io::Result<()> {
         let target = format!("{}:{}", &self.name, destination);
         let mut cmd = self.podman_command();
         cmd.arg("cp").arg(source).arg(&target);
