@@ -1,5 +1,35 @@
 # Spec — Resolve `build.context` Relative to `config_dir` Before Validation
 
+## Source
+Filed as **Bug 4** in `sandbox_dind_engine_20260502/devcont-bugs.md` (caller repo `/home/erwan/git/erwan/`). Surfaced 2026-05-03 during Phase 5 verification of the DinD-engine wiring against `tools-lib/.devcontainer/`.
+
+## Symptom (verbatim from the source report)
+
+With `"build": { "dockerfile": "Dockerfile", "context": ".." }` and the devcontainer.json at `<workspace>/.devcontainer/`, `devcont start` fails:
+
+```
+Error: path '..' escapes workspace root '/workspace'
+```
+
+## Reproducer (verbatim from the source report)
+
+```bash
+mkdir -p /tmp/devcont-bug4/.devcontainer
+cat > /tmp/devcont-bug4/.devcontainer/devcontainer.json <<'JSON'
+{ "name": "bug4", "build": { "dockerfile": "Dockerfile", "context": ".." } }
+JSON
+echo "FROM debian:bookworm-slim" > /tmp/devcont-bug4/.devcontainer/Dockerfile
+cd /tmp/devcont-bug4 && devcont start --trust 2>&1 | head -3
+# Expected: build proceeds (context resolves to /tmp/devcont-bug4)
+# Actual:   "path '..' escapes workspace root"
+```
+
+(Note: per repo convention this project's smoke fixtures live under `tmp/` not `/tmp/` — Phase 3 of this plan adapts the reproducer to that path.)
+
+## Workaround Currently in Use
+
+`tools-lib` consumer dropped `"context": ".."` entirely and adjusted the Dockerfile's `COPY` paths to be relative to `.devcontainer/` instead of the workspace root. Pushes the problem onto downstream users; not a clean fix.
+
 ## Severity
 **Blocker (spec compliance)** — every spec-compliant `devcontainer.json` that uses a relative `build.context` of `".."` (or any path that resolves UP from `.devcontainer/` to the workspace root) is rejected with an "escapes workspace root" error. Per the [containers.dev spec](https://containers.dev/implementors/json_reference/), paths in `devcontainer.json` are interpreted relative to the directory containing `devcontainer.json` — so `"context": ".."` from `.devcontainer/devcontainer.json` IS the workspace root, and is valid.
 

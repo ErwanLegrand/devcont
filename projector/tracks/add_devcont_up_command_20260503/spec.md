@@ -1,5 +1,36 @@
 # Spec — Add `devcont up` Subcommand for Non-Attached Start
 
+## Source
+Filed as **Bug 5** in `sandbox_dind_engine_20260502/devcont-bugs.md` (caller repo `/home/erwan/git/erwan/`). The only remaining blocker before `good_vibe_sandbox_20260321` can be re-checkpointed clean.
+
+## Symptom (verbatim from the source report)
+
+`devcont start --trust` succeeds at build → create → start → restart, then runs `docker attach <container>`. From a non-interactive caller (e.g., the agent sandbox's `entrypoint.sh`, which runs `devcont start` synchronously and then wants to `exec "$@"` afterwards), the attach either:
+
+- blocks forever waiting for stdin, OR
+- fails with `Error: attach: Exec failed with exit code 1`.
+
+## Reproducer (verbatim from the source report)
+
+```bash
+# Inside any non-interactive shell (CI, sub-process, batch script):
+devcont start --trust
+# Either blocks forever, or — if stdin is a closed pipe — exits with
+# "Error: attach: Exec failed with exit code 1"
+```
+
+## Workarounds the Caller Considered (all rejected as unclean)
+
+From the source report:
+
+1. Wrap `devcont start` in `( ... ) &` and poll `devcont info` until the container shows `running`. Adds shell-script complexity for every caller and a polling delay.
+2. Skip `devcont start` entirely from `entrypoint.sh`; let the agent call it lazily on first need. Pushes a long startup wait onto the user's first command.
+3. Submit a PR for `--no-attach` (or equivalent). The chosen path — this track.
+
+## Verified Failure Surface
+
+The source report's Phase 5 verification matrix shows the full DinD-engine architecture works end-to-end **except** for the final attach step. Build, create, start, network isolation, workspace bind-chain, and `docker exec` from the host all PASS. Only `devcont start ... → docker attach` fails. So this is a narrow CLI-shape fix, not a deeper lifecycle problem.
+
 ## Severity
 **High (interop)** — `devcont start` always ends with `docker attach`, blocking the calling process on the container's stdin/stdout. Programmatic callers (CI scripts, the agent's `entrypoint.sh` in `good_vibe_sandbox_*`) want "ensure running, return, then `docker exec` later" semantics. Reported as the only remaining blocker for re-checkpointing `good_vibe_sandbox_20260321` clean.
 
