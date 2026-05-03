@@ -1,0 +1,8 @@
+{
+  "track_id": "investigate_integration_test_failures_20260503",
+  "type": "bug",
+  "status": "new",
+  "created_at": "2026-05-02T23:57:22Z",
+  "updated_at": "2026-05-02T23:57:22Z",
+  "description": "23 of 32 tests in tests/integration.rs fail consistently across all branches. Investigate root cause for each, classify (live-engine-required / network-required / misconfigured / genuinely broken / brittle), and remediate so cargo test --workspace passes by default. Live-engine tests should be #[ignore]-gated and run only in a dedicated CI job."
+}

@@ -1,0 +1,8 @@
+{
+  "track_id": "improve_format_exec_error_stderr_20260503",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-05-02T23:57:22Z",
+  "updated_at": "2026-05-02T23:57:22Z",
+  "description": "format_exec_error discards captured stderr unless one of its known patterns matches, hiding the actual engine-reported failure cause from users. Surface the captured stderr (or a normalised excerpt) when no pattern matches, and add patterns for common cases like missing Dockerfile."
+}

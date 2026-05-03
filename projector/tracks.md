@@ -17,3 +17,11 @@ Type: bug · Severity: blocker (every spec-compliant `devcontainer.json` fails) 
 ## [ ] Track: Add an inspect-shaped subcommand (`container-name`, `info`)
 *Link: [./tracks/add_inspect_subcommand_20260503/](./tracks/add_inspect_subcommand_20260503/)*
 Type: feature · Severity: high · Sequencing: independent — can land in parallel
+
+## [ ] Track: Surface captured stderr in `format_exec_error` fallback
+*Link: [./tracks/improve_format_exec_error_stderr_20260503/](./tracks/improve_format_exec_error_stderr_20260503/)*
+Type: feature · Severity: medium (UX) · Sequencing: depends on `fix_start_orchestration_cascade_20260503` (already landed); closes the open follow-up in that track's Verification Log
+
+## [ ] Track: Investigate `tests/integration.rs` failures
+*Link: [./tracks/investigate_integration_test_failures_20260503/](./tracks/investigate_integration_test_failures_20260503/)*
+Type: bug · Severity: medium · Sequencing: independent — can run in parallel with the format_exec_error track
