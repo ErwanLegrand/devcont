@@ -7,7 +7,7 @@ Spec: [./spec.md](./spec.md)
 
 ---
 
-## Phase 1: Lock Down Existing Behaviour with Tests
+## Phase 1: Lock Down Existing Behaviour with Tests [checkpoint: 56ff044]
 
 - [x] Task: Audit `src/provider/utils.rs::tests` for existing `format_exec_error` coverage. List which branches are tested and which aren't. — All four branches are already covered: `format_exec_error_image_not_found`, `format_exec_error_image_not_known`, `format_exec_error_permission_denied`, `format_exec_error_not_enough_permissions`, `format_exec_error_cannot_connect`, `format_exec_error_connection_refused`, `format_exec_error_daemon_not_running`, `format_exec_error_socket_not_found`, `format_exec_error_container_exists`, plus fallback and empty-stderr tests (11 total). No branches are untested.
 - [x] Task: Red Phase — add tests for any missing branches: all four branches already have multiple tests; no new tests needed. Existing tests pass on `cargo test format_exec_error` (11/11 pass).
