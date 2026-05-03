@@ -173,11 +173,6 @@ fn unique_name(prefix: &str) -> String {
     format!("devcont-itest-{prefix}-{ts}")
 }
 
-/// Returns `true` if the given command is available on the system PATH.
-fn command_available(cmd: &str) -> bool {
-    Command::new(cmd).arg("--version").output().is_ok()
-}
-
 /// Build a Docker image from a fixture directory.
 ///
 /// Uses the Dockerfile at `<fixture_dir>/Dockerfile` with the fixture
@@ -329,7 +324,16 @@ fn load_podman_compose_provider(name: &str) -> PodmanCompose {
 // ---------------------------------------------------------------------------
 
 /// Verify that Docker is available and the socket is accessible.
+///
+/// # Prerequisites
+/// A live Docker daemon must be reachable on the host socket.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_docker_available
+/// ```
 #[test]
+#[ignore = "requires a live Docker daemon"]
 fn test_docker_available() {
     let status = Command::new("docker")
         .arg("version")
@@ -343,7 +347,17 @@ fn test_docker_available() {
 
 /// Build an image from the `basic` fixture, create a container, and assert it
 /// exists. Verifies `docker build` + `docker create` + `docker ps` work.
+///
+/// # Prerequisites
+/// A live Docker daemon must be reachable and `alpine:latest` must be pre-pulled
+/// (or a network connection to Docker Hub must be available).
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_basic_build_and_create
+/// ```
 #[test]
+#[ignore = "requires a live Docker daemon and alpine:latest to be pre-pulled"]
 fn test_basic_build_and_create() {
     let name = unique_name("basic");
     let _container_guard = ContainerGuard::new(&name);
@@ -380,7 +394,16 @@ fn test_basic_build_and_create() {
 
 /// Start a container, exec a command inside it, and assert success.
 /// Verifies `docker start` + `docker exec` work.
+///
+/// # Prerequisites
+/// A live Docker daemon must be reachable and `alpine:latest` must be pre-pulled.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_exec_in_container
+/// ```
 #[test]
+#[ignore = "requires a live Docker daemon and alpine:latest to be pre-pulled"]
 fn test_exec_in_container() {
     let name = unique_name("exec");
     let (_image, _container_guard, _image_guard) = start_fixture_container("basic", &name);
@@ -404,7 +427,16 @@ fn test_exec_in_container() {
 
 /// Simulate a `postCreateCommand` lifecycle hook: exec a command that writes
 /// a marker file, then verify the file exists in the container.
+///
+/// # Prerequisites
+/// A live Docker daemon must be reachable and `alpine:latest` must be pre-pulled.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_post_create_command
+/// ```
 #[test]
+#[ignore = "requires a live Docker daemon and alpine:latest to be pre-pulled"]
 fn test_post_create_command() {
     let name = unique_name("postcreate");
     let (_image, _container_guard, _image_guard) = start_fixture_container("post_create", &name);
@@ -432,7 +464,16 @@ fn test_post_create_command() {
 // ---------------------------------------------------------------------------
 
 /// `exists()` returns `false` for a container that has never been created.
+///
+/// # Prerequisites
+/// A live Docker daemon must be reachable.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_docker_exists_returns_false_before_create
+/// ```
 #[test]
+#[ignore = "requires a live Docker daemon"]
 fn test_docker_exists_returns_false_before_create() {
     let name = unique_name("docker-pre");
     let provider = load_docker_provider(&name);
@@ -443,7 +484,16 @@ fn test_docker_exists_returns_false_before_create() {
 }
 
 /// `build()` + `create()` succeed and `exists()` returns `true` afterwards.
+///
+/// # Prerequisites
+/// A live Docker daemon must be reachable and `alpine:latest` must be pre-pulled.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_docker_build_and_create
+/// ```
 #[test]
+#[ignore = "requires a live Docker daemon and alpine:latest to be pre-pulled"]
 fn test_docker_build_and_create() {
     let name = unique_name("docker-create");
     let provider = load_docker_provider(&name);
@@ -462,7 +512,16 @@ fn test_docker_build_and_create() {
 }
 
 /// `start()` succeeds and `running()` returns `true` afterwards.
+///
+/// # Prerequisites
+/// A live Docker daemon must be reachable and `alpine:latest` must be pre-pulled.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_docker_start_and_running
+/// ```
 #[test]
+#[ignore = "requires a live Docker daemon and alpine:latest to be pre-pulled"]
 fn test_docker_start_and_running() {
     let name = unique_name("docker-start");
     let provider = load_docker_provider(&name);
@@ -482,7 +541,16 @@ fn test_docker_start_and_running() {
 }
 
 /// `stop()` succeeds and `running()` returns `false` afterwards.
+///
+/// # Prerequisites
+/// A live Docker daemon must be reachable and `alpine:latest` must be pre-pulled.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_docker_running_returns_false_when_stopped
+/// ```
 #[test]
+#[ignore = "requires a live Docker daemon and alpine:latest to be pre-pulled"]
 fn test_docker_running_returns_false_when_stopped() {
     let name = unique_name("docker-stop");
     let provider = load_docker_provider(&name);
@@ -503,7 +571,16 @@ fn test_docker_running_returns_false_when_stopped() {
 }
 
 /// `restart()` succeeds on a running container and it remains running.
+///
+/// # Prerequisites
+/// A live Docker daemon must be reachable and `alpine:latest` must be pre-pulled.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_docker_restart
+/// ```
 #[test]
+#[ignore = "requires a live Docker daemon and alpine:latest to be pre-pulled"]
 fn test_docker_restart() {
     let name = unique_name("docker-restart");
     let provider = load_docker_provider(&name);
@@ -524,7 +601,16 @@ fn test_docker_restart() {
 }
 
 /// `exec()` runs a command inside the container and returns `true` on success.
+///
+/// # Prerequisites
+/// A live Docker daemon must be reachable and `alpine:latest` must be pre-pulled.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_docker_exec
+/// ```
 #[test]
+#[ignore = "requires a live Docker daemon and alpine:latest to be pre-pulled"]
 fn test_docker_exec() {
     let name = unique_name("docker-exec");
     let provider = load_docker_provider(&name);
@@ -543,7 +629,16 @@ fn test_docker_exec() {
 }
 
 /// `cp()` copies a host file into the container; the file is then present.
+///
+/// # Prerequisites
+/// A live Docker daemon must be reachable and `alpine:latest` must be pre-pulled.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_docker_cp
+/// ```
 #[test]
+#[ignore = "requires a live Docker daemon and alpine:latest to be pre-pulled"]
 fn test_docker_cp() {
     let name = unique_name("docker-cp");
     let provider = load_docker_provider(&name);
@@ -576,7 +671,16 @@ fn test_docker_cp() {
 }
 
 /// `stop()` + `rm()` remove the container; `exists()` returns `false`.
+///
+/// # Prerequisites
+/// A live Docker daemon must be reachable and `alpine:latest` must be pre-pulled.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_docker_stop_and_rm
+/// ```
 #[test]
+#[ignore = "requires a live Docker daemon and alpine:latest to be pre-pulled"]
 fn test_docker_stop_and_rm() {
     let name = unique_name("docker-rm");
     let provider = load_docker_provider(&name);
@@ -603,7 +707,16 @@ fn test_docker_stop_and_rm() {
 // ---------------------------------------------------------------------------
 
 /// `exists()` returns `false` for a compose project that has never been started.
+///
+/// # Prerequisites
+/// A live Docker daemon must be reachable (Docker Compose is used to query status).
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_compose_exists_returns_false_before_build
+/// ```
 #[test]
+#[ignore = "requires a live Docker daemon"]
 fn test_compose_exists_returns_false_before_build() {
     let name = unique_name("compose-pre");
     let provider = load_compose_provider(&name);
@@ -614,7 +727,17 @@ fn test_compose_exists_returns_false_before_build() {
 }
 
 /// `build()` + `start()` succeed; `exists()` and `running()` both return `true`.
+///
+/// # Prerequisites
+/// A live Docker daemon must be reachable and `alpine:latest` must be pre-pulled
+/// (`docker compose up` pulls the image if it is not cached).
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_compose_build_and_start
+/// ```
 #[test]
+#[ignore = "requires a live Docker daemon and alpine:latest to be pre-pulled"]
 fn test_compose_build_and_start() {
     let name = unique_name("compose-start");
     let provider = load_compose_provider(&name);
@@ -636,7 +759,16 @@ fn test_compose_build_and_start() {
 }
 
 /// `exec()` runs a command in the service container.
+///
+/// # Prerequisites
+/// A live Docker daemon must be reachable and `alpine:latest` must be pre-pulled.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_compose_exec
+/// ```
 #[test]
+#[ignore = "requires a live Docker daemon and alpine:latest to be pre-pulled"]
 fn test_compose_exec() {
     let name = unique_name("compose-exec");
     let provider = load_compose_provider(&name);
@@ -650,7 +782,16 @@ fn test_compose_exec() {
 }
 
 /// `cp()` copies a host file into the service container.
+///
+/// # Prerequisites
+/// A live Docker daemon must be reachable and `alpine:latest` must be pre-pulled.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_compose_cp
+/// ```
 #[test]
+#[ignore = "requires a live Docker daemon and alpine:latest to be pre-pulled"]
 fn test_compose_cp() {
     let name = unique_name("compose-cp");
     let provider = load_compose_provider(&name);
@@ -676,7 +817,16 @@ fn test_compose_cp() {
 }
 
 /// `restart()` succeeds and the service remains running.
+///
+/// # Prerequisites
+/// A live Docker daemon must be reachable and `alpine:latest` must be pre-pulled.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_compose_restart
+/// ```
 #[test]
+#[ignore = "requires a live Docker daemon and alpine:latest to be pre-pulled"]
 fn test_compose_restart() {
     let name = unique_name("compose-restart");
     let provider = load_compose_provider(&name);
@@ -692,7 +842,16 @@ fn test_compose_restart() {
 }
 
 /// `stop()` + `rm()` shut down the project; `exists()` returns `false`.
+///
+/// # Prerequisites
+/// A live Docker daemon must be reachable and `alpine:latest` must be pre-pulled.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_compose_stop_and_rm
+/// ```
 #[test]
+#[ignore = "requires a live Docker daemon and alpine:latest to be pre-pulled"]
 fn test_compose_stop_and_rm() {
     let name = unique_name("compose-rm");
     let provider = load_compose_provider(&name);
@@ -714,7 +873,16 @@ fn test_compose_stop_and_rm() {
 // ---------------------------------------------------------------------------
 
 /// `exists()` returns `false` for a container that has never been created.
+///
+/// # Prerequisites
+/// Podman must be installed and reachable on the PATH.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_podman_exists_returns_false_before_create
+/// ```
 #[test]
+#[ignore = "requires podman to be installed"]
 fn test_podman_exists_returns_false_before_create() {
     let name = unique_name("podman-pre");
     let provider = load_podman_provider(&name);
@@ -725,7 +893,17 @@ fn test_podman_exists_returns_false_before_create() {
 }
 
 /// `build()` + `create()` succeed and `exists()` returns `true` afterwards.
+///
+/// # Prerequisites
+/// Podman must be installed and `alpine:latest` must be pre-pulled
+/// (`podman pull alpine:latest`), or a network connection to Docker Hub must be available.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_podman_build_and_create
+/// ```
 #[test]
+#[ignore = "requires podman and alpine:latest to be pre-pulled"]
 fn test_podman_build_and_create() {
     let name = unique_name("podman-create");
     let provider = load_podman_provider(&name);
@@ -743,7 +921,16 @@ fn test_podman_build_and_create() {
 }
 
 /// `start()` succeeds and `running()` returns `true` afterwards.
+///
+/// # Prerequisites
+/// Podman must be installed and `alpine:latest` must be pre-pulled.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_podman_start_and_running
+/// ```
 #[test]
+#[ignore = "requires podman and alpine:latest to be pre-pulled"]
 fn test_podman_start_and_running() {
     let name = unique_name("podman-start");
     let provider = load_podman_provider(&name);
@@ -762,7 +949,16 @@ fn test_podman_start_and_running() {
 }
 
 /// `stop()` succeeds and `running()` returns `false` afterwards.
+///
+/// # Prerequisites
+/// Podman must be installed and `alpine:latest` must be pre-pulled.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_podman_running_returns_false_when_stopped
+/// ```
 #[test]
+#[ignore = "requires podman and alpine:latest to be pre-pulled"]
 fn test_podman_running_returns_false_when_stopped() {
     let name = unique_name("podman-stop");
     let provider = load_podman_provider(&name);
@@ -782,7 +978,16 @@ fn test_podman_running_returns_false_when_stopped() {
 }
 
 /// `restart()` succeeds on a running container and it remains running.
+///
+/// # Prerequisites
+/// Podman must be installed and `alpine:latest` must be pre-pulled.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_podman_restart
+/// ```
 #[test]
+#[ignore = "requires podman and alpine:latest to be pre-pulled"]
 fn test_podman_restart() {
     let name = unique_name("podman-restart");
     let provider = load_podman_provider(&name);
@@ -802,7 +1007,16 @@ fn test_podman_restart() {
 }
 
 /// `exec()` runs a command inside the container and returns `true` on success.
+///
+/// # Prerequisites
+/// Podman must be installed and `alpine:latest` must be pre-pulled.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_podman_exec
+/// ```
 #[test]
+#[ignore = "requires podman and alpine:latest to be pre-pulled"]
 fn test_podman_exec() {
     let name = unique_name("podman-exec");
     let provider = load_podman_provider(&name);
@@ -820,7 +1034,16 @@ fn test_podman_exec() {
 }
 
 /// `cp()` copies a host file into the container; the file is then present.
+///
+/// # Prerequisites
+/// Podman must be installed and `alpine:latest` must be pre-pulled.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_podman_cp
+/// ```
 #[test]
+#[ignore = "requires podman and alpine:latest to be pre-pulled"]
 fn test_podman_cp() {
     let name = unique_name("podman-cp");
     let provider = load_podman_provider(&name);
@@ -850,7 +1073,16 @@ fn test_podman_cp() {
 }
 
 /// `stop()` + `rm()` remove the container; `exists()` returns `false`.
+///
+/// # Prerequisites
+/// Podman must be installed and `alpine:latest` must be pre-pulled.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_podman_stop_and_rm
+/// ```
 #[test]
+#[ignore = "requires podman and alpine:latest to be pre-pulled"]
 fn test_podman_stop_and_rm() {
     let name = unique_name("podman-rm");
     let provider = load_podman_provider(&name);
@@ -875,7 +1107,16 @@ fn test_podman_stop_and_rm() {
 // ---------------------------------------------------------------------------
 
 /// `exists()` returns `false` for a compose project that has never been started.
+///
+/// # Prerequisites
+/// Podman must be installed (uses `podman ps` to query project status).
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_podman_compose_exists_returns_false_before_build
+/// ```
 #[test]
+#[ignore = "requires podman to be installed"]
 fn test_podman_compose_exists_returns_false_before_build() {
     let name = unique_name("pcompose-pre");
     let provider = load_podman_compose_provider(&name);
@@ -886,12 +1127,18 @@ fn test_podman_compose_exists_returns_false_before_build() {
 }
 
 /// `build()` + `start()` succeed; `exists()` and `running()` both return `true`.
+///
+/// # Prerequisites
+/// `podman-compose` and `podman` must be installed, and `alpine:latest` must be
+/// pre-pulled via `podman pull alpine:latest`.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_podman_compose_build_and_start
+/// ```
 #[test]
+#[ignore = "requires podman, podman-compose, and alpine:latest to be pre-pulled"]
 fn test_podman_compose_build_and_start() {
-    if !command_available("podman-compose") {
-        eprintln!("SKIP: podman-compose not found");
-        return;
-    }
     let name = unique_name("pcompose-start");
     let provider = load_podman_compose_provider(&name);
     let file = fixture_path("compose")
@@ -916,12 +1163,18 @@ fn test_podman_compose_build_and_start() {
 }
 
 /// `exec()` runs a command in the service container.
+///
+/// # Prerequisites
+/// `podman-compose` and `podman` must be installed, and `alpine:latest` must be
+/// pre-pulled via `podman pull alpine:latest`.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_podman_compose_exec
+/// ```
 #[test]
+#[ignore = "requires podman, podman-compose, and alpine:latest to be pre-pulled"]
 fn test_podman_compose_exec() {
-    if !command_available("podman-compose") {
-        eprintln!("SKIP: podman-compose not found");
-        return;
-    }
     let name = unique_name("pcompose-exec");
     let provider = load_podman_compose_provider(&name);
     let file = fixture_path("compose")
@@ -938,12 +1191,18 @@ fn test_podman_compose_exec() {
 }
 
 /// `cp()` copies a host file into the service container.
+///
+/// # Prerequisites
+/// `podman-compose` and `podman` must be installed, and `alpine:latest` must be
+/// pre-pulled via `podman pull alpine:latest`.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_podman_compose_cp
+/// ```
 #[test]
+#[ignore = "requires podman, podman-compose, and alpine:latest to be pre-pulled"]
 fn test_podman_compose_cp() {
-    if !command_available("podman-compose") {
-        eprintln!("SKIP: podman-compose not found");
-        return;
-    }
     let name = unique_name("pcompose-cp");
     let provider = load_podman_compose_provider(&name);
     let file = fixture_path("compose")
@@ -972,12 +1231,18 @@ fn test_podman_compose_cp() {
 }
 
 /// `restart()` succeeds and the service remains running.
+///
+/// # Prerequisites
+/// `podman-compose` and `podman` must be installed, and `alpine:latest` must be
+/// pre-pulled via `podman pull alpine:latest`.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_podman_compose_restart
+/// ```
 #[test]
+#[ignore = "requires podman, podman-compose, and alpine:latest to be pre-pulled"]
 fn test_podman_compose_restart() {
-    if !command_available("podman-compose") {
-        eprintln!("SKIP: podman-compose not found");
-        return;
-    }
     let name = unique_name("pcompose-restart");
     let provider = load_podman_compose_provider(&name);
     let file = fixture_path("compose")
@@ -996,12 +1261,18 @@ fn test_podman_compose_restart() {
 }
 
 /// `stop()` + `rm()` shut down the project; `exists()` returns `false`.
+///
+/// # Prerequisites
+/// `podman-compose` and `podman` must be installed, and `alpine:latest` must be
+/// pre-pulled via `podman pull alpine:latest`.
+///
+/// Run manually with:
+/// ```text
+/// cargo test --test integration -- --ignored test_podman_compose_stop_and_rm
+/// ```
 #[test]
+#[ignore = "requires podman, podman-compose, and alpine:latest to be pre-pulled"]
 fn test_podman_compose_stop_and_rm() {
-    if !command_available("podman-compose") {
-        eprintln!("SKIP: podman-compose not found");
-        return;
-    }
     let name = unique_name("pcompose-rm");
     let provider = load_podman_compose_provider(&name);
     let file = fixture_path("compose")
