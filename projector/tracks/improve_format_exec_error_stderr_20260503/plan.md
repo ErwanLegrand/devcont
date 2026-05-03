@@ -20,19 +20,13 @@ Spec: [./spec.md](./spec.md)
 
 ## Phase 2: New Pattern — Missing Dockerfile
 
-- [ ] Task: Red Phase — add `format_exec_error_missing_dockerfile`:
-    - stderr: `"#1 [internal] load build definition from Dockerfile\n#1 transferring dockerfile: 2B done\n#1 DONE 0.0s\nERROR: failed to build: failed to solve: failed to read dockerfile: open Dockerfile: no such file or directory"`
-    - exit code: `1`
-    - assert message contains `"Dockerfile"` and `"not found"` (or equivalent), and the first matching line from stderr.
-    - Run `cargo test format_exec_error_missing_dockerfile` — confirm fail.
-- [ ] Task: Green Phase — add a new arm to `format_exec_error` matching `"failed to read dockerfile"` OR (`"no such file or directory"` AND NOT `".sock"` AND `"dockerfile"`-mention). Format: `"Dockerfile not found: <first matching line of stderr>"`.
-    - Order arms carefully — the daemon-not-running arm already special-cases `".sock"` exclusion for `"no such file or directory"`. The new arm must come AFTER the daemon arm so the `.sock` case is still caught first.
-    - Run `cargo test format_exec_error` — confirm new test passes and existing tests still pass.
-- [ ] Task: Refactor — keep the function readable; extract `first_nonempty_line(stderr: &str) -> &str` if it's used in more than two arms.
-- [ ] Task: Verify Coverage on `format_exec_error`. Coverage of the new arm should be 100%.
-- [ ] Task: Pre-commit checks.
-- [ ] Task: Commit (`feat(provider): recognise missing-Dockerfile errors in format_exec_error`).
-- [ ] Task: Projector — User Manual Verification 'Phase 2: New Pattern — Missing Dockerfile' (Protocol in workflow.md)
+- [x] Task: Red Phase — add `format_exec_error_missing_dockerfile`: confirmed FAILED before implementation. e1c0897
+- [x] Task: Green Phase — added new arm after daemon-not-running arm; extracted `first_nonempty_line` helper. All 12 `format_exec_error` tests pass. e1c0897
+- [x] Task: Refactor — `first_nonempty_line` extracted in Green phase (used in new arm and upcoming Phase 3 fallback). e1c0897
+- [x] Task: Verify Coverage on `format_exec_error`. New arm covered by `format_exec_error_missing_dockerfile`. e1c0897
+- [x] Task: Pre-commit checks. `cargo fmt`, `cargo clippy`, `cargo check`, `cargo test --lib` all pass. e1c0897
+- [x] Task: Commit (`feat(provider): recognise missing-Dockerfile errors in format_exec_error`). e1c0897
+- [x] Task: Projector — User Manual Verification 'Phase 2: New Pattern — Missing Dockerfile' (Protocol in workflow.md) e1c0897
 
 ---
 
