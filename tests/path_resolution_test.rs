@@ -360,6 +360,14 @@ fn sanity_path_type_check() {
 /// This is the canonical regression test for the bug: the old code validated
 /// `".."` literally against the workspace root, which rejected a spec-compliant
 /// context that points at the project root.
+///
+/// Layout:
+/// ```text
+/// <workspace>/
+///   Dockerfile            ← build context root
+///   .devcontainer/
+///     devcontainer.json   ← config_dir here; context ".." → workspace root
+/// ```
 #[test]
 fn validate_build_context_dotdot_resolves_to_workspace_root() {
     let ws = tempfile::tempdir().expect("tempdir");
@@ -367,10 +375,12 @@ fn validate_build_context_dotdot_resolves_to_workspace_root() {
     std::fs::create_dir_all(&dc_dir).expect("create .devcontainer dir");
     std::fs::write(
         dc_dir.join("devcontainer.json"),
-        r#"{"name":"ctx-dotdot","build":{"dockerfile":"../Dockerfile","context":".."}}"#,
+        // context ".." resolves to workspace root; Dockerfile at workspace root
+        // is named "Dockerfile" relative to that context.
+        r#"{"name":"ctx-dotdot","build":{"dockerfile":"Dockerfile","context":".."}}"#,
     )
     .expect("write devcontainer.json");
-    // Dockerfile must exist at the resolved location: workspace root.
+    // Dockerfile at workspace root — resolved as context.join("Dockerfile") = workspace/Dockerfile
     std::fs::write(ws.path().join("Dockerfile"), "FROM alpine\n").expect("write Dockerfile");
 
     let result = Devcontainer::load(ws.path());

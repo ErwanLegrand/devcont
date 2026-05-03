@@ -24,7 +24,7 @@ use crate::{
     settings::Settings,
 };
 use config::Config; // re-export from sub-module
-use paths::validate_within_root;
+use paths::{lexical_normalize, validate_within_root};
 use std::path::{Path, PathBuf};
 // ---- free functions (hook helpers, validation, provider construction) ----
 /// Execute a lifecycle hook inside the container via the provider.
@@ -647,9 +647,17 @@ fn resolve_build_source(
 
 /// Validate `build.context` against the workspace root (FR-003).
 ///
-/// Relative contexts must resolve within `root`. Absolute contexts outside `root`
-/// emit a warning but are allowed through (they may be intentional host mounts).
-fn validate_build_context(root: &Path, context: &str) -> Result<()> {
+/// Per the containers.dev spec, relative `context` values are interpreted relative
+/// to `config_dir` (the directory containing `devcontainer.json`), **not** relative
+/// to the workspace root. This function resolves the context lexically against
+/// `config_dir` and then checks that the resolved path stays within `root`.
+///
+/// - Relative `context`: resolved as `lexical_normalize(config_dir.join(context))`,
+///   then validated against `root`. This means `"context": ".."` from a
+///   `.devcontainer/` layout correctly resolves to the workspace root and passes.
+/// - Absolute `context`: validated directly; if outside `root`, a warning is emitted
+///   but no error is returned (absolute paths may be intentional host mounts).
+fn validate_build_context(root: &Path, config_dir: &Path, context: &str) -> Result<()> {
     let context_path = Path::new(context);
     if context_path.is_absolute() {
         if validate_within_root(root, context_path).is_err() {
@@ -661,7 +669,9 @@ fn validate_build_context(root: &Path, context: &str) -> Result<()> {
         }
         Ok(())
     } else {
-        validate_within_root(root, context_path)?;
+        // Resolve relative to config_dir, then check workspace containment.
+        let resolved = lexical_normalize(&config_dir.join(context_path));
+        validate_within_root(root, &resolved)?;
         Ok(())
     }
 }
@@ -691,13 +701,17 @@ fn validate_mounts(
 ///
 /// Centralises the `validate_build_context` + `validate_mounts` calls that were
 /// previously duplicated in every non-compose provider branch of `build_provider`.
-fn validate_devcontainer_paths(directory: &Path, config: &Config) -> Result<()> {
+///
+/// - `root` is the workspace root used for containment checks.
+/// - `config_dir` is the directory containing the loaded `devcontainer.json`; it is
+///   used to resolve relative `build.context` values before validating them.
+fn validate_devcontainer_paths(root: &Path, config_dir: &Path, config: &Config) -> Result<()> {
     if let Some(build) = &config.build {
         if let Some(context) = &build.context {
-            validate_build_context(directory, context)?;
+            validate_build_context(root, config_dir, context)?;
         }
     }
-    validate_mounts(directory, config.mounts.as_ref())
+    validate_mounts(root, config.mounts.as_ref())
 }
 
 /// Resolve the build context directory for Docker/Podman providers.
@@ -740,7 +754,7 @@ fn build_provider(
 
     let name = config.safe_name()?;
     if !config.is_compose() {
-        validate_devcontainer_paths(workspace, config)?;
+        validate_devcontainer_paths(workspace, config_dir, config)?;
     }
 
     let env_vars = sorted_env_vars(config);
