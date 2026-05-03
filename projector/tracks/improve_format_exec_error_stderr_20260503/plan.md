@@ -45,7 +45,7 @@ Spec: [./spec.md](./spec.md)
 
 ---
 
-## Phase 4: Re-run the Cascade Track's Smoke Test
+## Phase 4: Re-run the Cascade Track's Smoke Test [checkpoint: c0afcbd]
 
 - [x] Task: Rebuild the release binary (`cargo build --release`). f18b142
 - [x] Task: Run the existing fixture at `tmp/devcont-smoke-test/.devcontainer/devcontainer.json` (recreated from Verification Log). Cherry-picked `refactor(provider): make non-zero exit propagate as Err` (30c2942) and `feat(provider): include step name and stderr in lifecycle error` (c2875cb) into this branch first, as the track spec requires these as a dependency. f18b142
