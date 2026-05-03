@@ -16,7 +16,31 @@ devcont rebuild          # destroy and rebuild the container
 devcont rebuild --no-cache  # rebuild without layer cache
 ```
 
-Both commands accept an optional `[dir]` argument to target a different directory.
+All commands accept an optional `[dir]` argument to target a different directory.
+
+## Subcommands
+
+| Subcommand | Purpose | Attaches? | Runs hooks? | Honours `shutdownAction`? |
+|---|---|---|---|---|
+| `rebuild` | Destroy and recreate the container from scratch | Yes | Yes | Yes |
+| `start` | Launch (or re-attach to) an interactive session | Yes | Yes | Yes |
+| `up` | Ensure the container is running; return when ready | No | Yes (pre-attach) | No |
+
+### Programmatic usage
+
+Use `up` when you need "ensure running, then `docker exec`" semantics without
+blocking on an interactive session:
+
+```sh
+# Bring the container up in the background, then exec a command.
+devcont up .
+docker exec $(docker ps --filter name=devcont --format '{{.Names}}' | head -1) echo hello
+```
+
+`up` runs `initializeCommand`, `onCreateCommand`, `updateContentCommand`,
+`postCreateCommand`, and `postStartCommand` — everything a freshly created
+container needs before your code can run. It does **not** call `restart`,
+`attach`, `postAttachCommand`, or stop the container afterwards.
 
 ### Inspecting Containers (side-effect free)
 
