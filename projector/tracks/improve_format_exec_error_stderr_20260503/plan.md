@@ -30,7 +30,7 @@ Spec: [./spec.md](./spec.md)
 
 ---
 
-## Phase 3: Fallback — Surface stderr Verbatim
+## Phase 3: Fallback — Surface stderr Verbatim [checkpoint: ba6cd00]
 
 - [x] Task: Red Phase — add `format_exec_error_fallback_includes_stderr`: confirmed FAILED before implementation. c3fc163
 - [x] Task: Red Phase — add `format_exec_error_fallback_collapses_multiline`: confirmed FAILED. Also updated existing `format_exec_error_fallback` and `format_exec_error_empty_stderr` tests to expect new behaviour. c3fc163
