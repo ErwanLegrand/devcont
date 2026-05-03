@@ -301,7 +301,24 @@ audit the decision.
 
 ## Phase 4 — Proposed CI YAML
 
-The following job should be added to `.github/workflows/test.yml`.
+### Existing CI Analysis
+
+`.github/workflows/test.yml` already has a `test` job that:
+- Installs podman and podman-compose.
+- Runs `cargo test --test integration --verbose` — but since all 32 tests are now
+  `#[ignore]`-gated, this step does **nothing useful** (0 tests run, 32 ignored).
+- Does NOT pre-pull `alpine:latest`.
+
+`.github/workflows/ci.yml` has a `test` job that runs `cargo test --all-targets`
+(which includes the integration test binary) but also skips all `#[ignore]` tests.
+
+**Recommended change to `test.yml`:** replace the existing `Run integration tests`
+step with a `--ignored` run that pre-pulls `alpine:latest`. Alternatively, add a
+separate `tests-ignored` job (shown below) so the default test job remains fast and
+the live-engine job can fail independently without blocking the main suite.
+
+The following YAML shows a **new job `tests-ignored`** to add inside the `jobs:`
+block of `.github/workflows/test.yml`.
 **This is a draft; do not commit to `.github/workflows/` until the user has reviewed
 and approved it.**
 
@@ -309,12 +326,14 @@ and approved it.**
   tests-ignored:
     name: Integration tests (live engine)
     runs-on: ubuntu-latest
-    needs: []
+    needs: []          # runs independently of the default test job
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: '1.85'
 
       - name: Cache Cargo registry
         uses: actions/cache@v4
@@ -323,12 +342,12 @@ and approved it.**
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-ignored-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install podman and podman-compose
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y podman podman-compose
+          sudo apt-get install -y --no-install-recommends podman podman-compose
 
       - name: Pre-pull alpine image (Docker and Podman)
         run: |
@@ -336,8 +355,8 @@ and approved it.**
           podman pull alpine:latest
 
       - name: Run ignored integration tests
-        run: >
-          cargo test --workspace --test integration -- --ignored --test-threads=1
+        run: |
+          cargo test --test integration --verbose -- --ignored --test-threads=1
         env:
           RUST_BACKTRACE: 1
 
@@ -356,13 +375,19 @@ and approved it.**
    state (containers/images by unique-but-timestamp-based names). Running in parallel
    risks collisions. Cargo defaults to parallel; this overrides it.
 2. `podman-compose` is in the Ubuntu 22+ apt repositories as the `podman-compose`
-   package.
+   package (matches what the existing `test.yml` already uses).
 3. `continue-on-error: false` (default) — all `#[ignore]`-gated tests should pass
    in a fully prepared environment.
-4. `needs: []` — runs concurrently with the `tests` job. Change to `needs: [tests]`
+4. `needs: []` — runs concurrently with the `test` job. Change to `needs: [test]`
    if sequential execution is preferred.
 5. Consider pinning `alpine:latest` to a digest in the future to prevent flakiness
    from upstream image changes.
+6. The existing `Run integration tests` step in `test.yml` currently does nothing
+   useful (all 32 tests are now `#[ignore]`-gated, so 0 tests run). That step should
+   either be removed or updated to add `-- --ignored --test-threads=1` with a prior
+   `docker pull alpine:latest && podman pull alpine:latest` step. The draft above
+   adds a separate `tests-ignored` job; the user should decide during review whether
+   to keep the old step or consolidate.
 
 ---
 

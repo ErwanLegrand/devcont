@@ -5,9 +5,9 @@ Spec: [./spec.md](./spec.md)
 
 ---
 
-## Phase 1: Enumerate and Capture Failures
+## Phase 1: Enumerate and Capture Failures [checkpoint: cddfe67]
 
-- [x] Task: Run `cargo test --workspace --test integration --no-fail-fast 2>&1 | tee tmp/integration_test_output.txt` (or stash output in this track directory's `findings.md` working notes — do not commit `tmp/`).
+- [x] Task: Run `cargo test --workspace --test integration --no-fail-fast 2>&1 | tee tmp/integration_test_output.txt` (or stash output in this track directory's `findings.md` working notes — do not commit `tmp/`). cddfe67
 - [x] Task: List every failing test name and its panic/assertion message in `findings.md` under section `## Failure Inventory`. One subsection per test, format:
     ```
     ### test_<name>
@@ -23,7 +23,7 @@ Spec: [./spec.md](./spec.md)
 
 ---
 
-## Phase 2: Classify and Decide Remediation
+## Phase 2: Classify and Decide Remediation [checkpoint: cddfe67]
 
 - [x] Task: For each failing test in `findings.md`, classify by:
     - **Class:** `live-engine-required` / `network-required` / `podman-not-installed` / `misconfigured` / `genuinely-broken` / `brittle` / `platform-specific`.
@@ -39,40 +39,31 @@ Spec: [./spec.md](./spec.md)
 
 ---
 
-## Phase 3: Apply `#[ignore]` and Fix Misconfigured Tests
+## Phase 3: Apply `#[ignore]` and Fix Misconfigured Tests [checkpoint: 6750dc3]
 
-- [ ] Task: For each test classified `#[ignore]`:
+- [x] Task: For each test classified `#[ignore]`:
     - Red Phase — add a doc-comment above the test explaining the prerequisite and how to run it (`cargo test --test integration -- --ignored test_<name>`). Then add `#[ignore = "requires <prerequisite>"]`.
     - Green Phase — re-run `cargo test --workspace --test integration` and confirm the test no longer fails (it should be in the "ignored" count, not the "failed" count).
-- [ ] Task: For each test classified `fix-test`:
-    - Red Phase — confirm the test fails for the *expected* reason (not a different bug).
-    - Green Phase — fix the test (path, env var, fixture, cleanup) and confirm it now passes.
-    - Document the fix in `findings.md` under the test's subsection.
-- [ ] Task: For each test classified `fix-source`:
-    - Open a NEW track (`fix_<symptom>_<YYYYMMDD>`) and link it from `findings.md`. **Do not fix source bugs in this investigation track** — investigation and remediation should land separately so the diagnostic is auditable.
-- [ ] Task: For each test classified `cfg-gate`:
-    - Add the appropriate `#[cfg(...)]` attribute (typically `#[cfg(target_os = "linux")]` or similar).
-- [ ] Task: Run `cargo test --workspace` and confirm exit code 0 with no `FAILED` lines.
-- [ ] Task: Verify Coverage — coverage should not drop measurably for the source modules under `src/provider/*` since unit tests cover them.
-- [ ] Task: Pre-commit checks (`cargo fmt --check`, `cargo clippy -D warnings`, `cargo check`, `cargo test`).
-- [ ] Task: Commit (`test(integration): gate live-engine tests with #[ignore]; fix misconfigured ones`).
-- [ ] Task: Projector — User Manual Verification 'Phase 3: Apply #[ignore] and Fix Misconfigured Tests' (Protocol in workflow.md)
+  6750dc3
+- [x] Task: For each test classified `fix-test`: No tests classified fix-test in this track. 6750dc3
+- [x] Task: For each test classified `fix-source`: No tests classified fix-source in this track. 6750dc3
+- [x] Task: For each test classified `cfg-gate`: No tests classified cfg-gate in this track. 6750dc3
+- [x] Task: Run `cargo test --workspace` and confirm exit code 0 with no `FAILED` lines. Result: 0 failed, 32 ignored. 6750dc3
+- [x] Task: Verify Coverage — unit tests in src/provider/* are unchanged; coverage not affected. 6750dc3
+- [x] Task: Pre-commit checks (`cargo fmt --check`, `cargo clippy -D warnings`, `cargo check`, `cargo test`). 6750dc3
+- [x] Task: Commit (`test(integration): gate live-engine tests with #[ignore]; fix misconfigured ones`). 6750dc3
+- [x] Task: Projector — User Manual Verification 'Phase 3: Apply #[ignore] and Fix Misconfigured Tests' (Protocol in workflow.md) 6750dc3
 
 ---
 
-## Phase 4: CI Job for `--ignored` Tests
+## Phase 4: CI Job for `--ignored` Tests [YAML drafted; awaiting user review]
 
-- [ ] Task: Audit `.github/workflows/*.yml` for the existing test job. Identify where to plug in a new job (probably alongside the existing one, conditional on `docker` install).
-- [ ] Task: Sketch a new job `tests-ignored` (or extend existing) that:
-    - Installs `docker` (already common in `ubuntu-latest`).
-    - Pulls one tiny image (e.g., `alpine:3`) before the run, to satisfy live-engine tests.
-    - Runs `cargo test --workspace --test integration -- --ignored`.
-    - Marks the job as `continue-on-error: false` for `docker` tests; consider `continue-on-error: true` for `podman` tests in environments where rootless podman isn't reliably set up.
-    - Uploads test output as an artifact for diagnostic.
-- [ ] Task: Open a draft of the YAML in `findings.md` and request user review BEFORE editing the actual workflow file. The user signs off, then we commit.
-- [ ] Task: Once approved, commit the YAML change with `ci: add --ignored integration tests job`.
-- [ ] Task: Pre-commit checks.
-- [ ] Task: Projector — User Manual Verification 'Phase 4: CI Job for --ignored Tests' (Protocol in workflow.md)
+- [x] Task: Audit `.github/workflows/*.yml` for the existing test job. Identified: `test.yml` already installs podman but runs integration tests without `--ignored` (making the step a no-op). `ci.yml` runs `cargo test --all-targets` which also skips ignored tests. Both workflows need updating.
+- [x] Task: Sketch a new job `tests-ignored` — drafted in `findings.md` under "Phase 4 — Proposed CI YAML". The job installs podman/podman-compose, pre-pulls alpine:latest for both Docker and Podman, and runs `cargo test --test integration -- --ignored --test-threads=1`.
+- [x] Task: Open a draft of the YAML in `findings.md` and request user review BEFORE editing the actual workflow file. Draft written in findings.md.
+- [ ] Task: Once approved, commit the YAML change with `ci: add --ignored integration tests job`. BLOCKED — awaiting user review per spec guardrail.
+- [ ] Task: Pre-commit checks. BLOCKED — pending YAML approval.
+- [ ] Task: Projector — User Manual Verification 'Phase 4: CI Job for --ignored Tests' (Protocol in workflow.md). BLOCKED — pending approval.
 
 ---
 
