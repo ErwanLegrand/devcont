@@ -76,13 +76,13 @@ $ echo $?
 |---|---|
 | Exactly one error printed | ✓ One line: `Error: build: Exec failed with exit code 1`. |
 | Names the failed step | ✓ Prefix `build:` from `run_step("build", ...)`. |
-| Names the missing Dockerfile | ✗ Docker's actual stderr (`ERROR: failed to build: failed to solve: failed to read dockerfile: open Dockerfile: no such file or directory`) is captured by `Command::output()` but discarded by `format_exec_error`, which falls through to the generic `"Exec failed with exit code N"` branch because no known pattern matches "no such file". |
+| Names the missing Dockerfile | ✓ After `improve_format_exec_error_stderr_20260503` (commit e1c0897): `format_exec_error` now recognises "failed to read dockerfile" / "dockerfile"+"no such file" patterns and returns `"Dockerfile not found: <first stderr line>"`. Re-run (track `improve_format_exec_error_stderr_20260503` Phase 4) produced `Error: build: Dockerfile not found: #0 building with "default" instance using docker driver`. |
 | No subsequent docker invocation | ✓ Only one `docker build` line printed; no `docker create` / `start` / `restart` / `attach` / `stop` follow. |
 | Exit status non-zero | ✓ Exit 1. |
 
-**Conclusion.** The cascade fix (the primary goal of this track) is fully verified — orchestration halts on the first provider failure. The error message correctly names the failed step. The "name the missing Dockerfile" half is **not fully met**: spec acceptance criterion #6 ("captured stderr is plumbed through so the user sees the actual engine-reported reason") is partially regressed by `format_exec_error`'s pattern-only matching, which discards stderr when no pattern matches.
+**Conclusion.** The cascade fix (the primary goal of this track) is fully verified — orchestration halts on the first provider failure. The error message correctly names the failed step and the missing Dockerfile.
 
-**Follow-up (open).** Either widen `format_exec_error`'s patterns (add a "no such file" / "failed to read dockerfile" arm) or unconditionally include the captured stderr's first line as the fallback message. This warrants a separate track since the change touches the error-formatting taxonomy more broadly.
+**Follow-up (closed).** Resolved by track `improve_format_exec_error_stderr_20260503` (commit e1c0897). The new `format_exec_error` arm recognises "failed to read dockerfile" / "dockerfile" + "no such file or directory" patterns (excluding `.sock` paths), returning `"Dockerfile not found: <first stderr line>"`. The unconditional fallback (Phase 3 of that track, commit c3fc163) additionally ensures that any unrecognised stderr is surfaced rather than discarded.
 
 ---
 
