@@ -27,6 +27,14 @@ pub enum Error {
     #[error("Provider error: {0}")]
     ProviderError(String),
 
+    /// The container did not enter the `running` state after `start`.
+    ///
+    /// Typically caused by a Dockerfile whose main process exits immediately
+    /// (e.g., `CMD ["/bin/false"]`). Surfaced by `ensure_up` so callers don't
+    /// receive a false-positive success.
+    #[error("Container '{0}' is not running after start")]
+    ContainerNotRunning(String),
+
     /// A captured command exited with a non-zero status.
     ///
     /// The [`ExecOutput`](crate::provider::ExecOutput) is preserved so callers

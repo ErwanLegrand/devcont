@@ -364,6 +364,50 @@ impl Devcontainer {
         no_root_check: bool,
         no_audit_log: bool,
     ) -> Result<()> {
+        let audit = self.ensure_up(use_cache, trust, no_root_check, no_audit_log)?;
+        self.attach_and_finalize(&audit)
+    } // end fn run
+
+    /// Bring the dev container up without attaching.
+    ///
+    /// Returns once the container exists, is running, and post-creation hooks
+    /// have completed. Does NOT call `attach`. Does NOT honour `shutdownAction`.
+    /// Suitable for non-interactive callers (CI, agent entrypoints) that want
+    /// to set the container up and then `exec` into it themselves.
+    ///
+    /// Pass `no_audit_log = true` to suppress writing to the audit log.
+    ///
+    /// # Errors
+    /// Returns an error if any provider operation (build, create, start) fails,
+    /// any lifecycle hook fails, or the container fails to enter the `running`
+    /// state after `start`.
+    #[allow(clippy::fn_params_excessive_bools)]
+    pub fn up(
+        &self,
+        use_cache: bool,
+        trust: bool,
+        no_root_check: bool,
+        no_audit_log: bool,
+    ) -> Result<()> {
+        // ensure_up returns the AuditLogger for the caller to use; for `up` we
+        // simply drop it (logger flushes on drop).
+        let _audit = self.ensure_up(use_cache, trust, no_root_check, no_audit_log)?;
+        Ok(())
+    } // end fn up
+
+    /// Pre-attach lifecycle: validate, init hook, build/create, start, post-start
+    /// hooks, post-create hooks, and a final running-check.
+    ///
+    /// Returns the `AuditLogger` so a caller (e.g. `run`) can continue logging
+    /// against the same audit session.
+    #[allow(clippy::fn_params_excessive_bools)]
+    fn ensure_up(
+        &self,
+        use_cache: bool,
+        trust: bool,
+        no_root_check: bool,
+        no_audit_log: bool,
+    ) -> Result<AuditLogger> {
         run_args::validate_run_args(&self.config.run_args).map_err(Error::InvalidConfig)?;
 
         let cname = self.config.safe_name()?;
@@ -405,11 +449,25 @@ impl Devcontainer {
             dispatch_hook("postStartCommand", start_hook, runtime.as_ref(), &audit)?;
         } // postStartCommand
         self.post_create(&audit)?;
+        // Final running-check — catches the case where the container's main
+        // process exited immediately (e.g., a Dockerfile with CMD ["/bin/false"]).
+        if !runtime.running()? {
+            return Err(Error::ContainerNotRunning(cname));
+        }
+        Ok(audit)
+    } // end fn ensure_up
+
+    /// Post-`ensure_up` finalisation: restart, attach, post-attach hook, and
+    /// `shutdownAction` honour. Only the interactive `run` path calls this;
+    /// `up` returns after `ensure_up`.
+    fn attach_and_finalize(&self, audit: &AuditLogger) -> Result<()> {
+        let runtime = &self.provider;
+        let cname = self.config.safe_name()?;
         // Restart and attach for the interactive session.
         runtime.restart()?;
         runtime.attach()?;
         if let Some(attach_hook) = &self.config.post_attach_command {
-            dispatch_hook("postAttachCommand", attach_hook, runtime.as_ref(), &audit)?;
+            dispatch_hook("postAttachCommand", attach_hook, runtime.as_ref(), audit)?;
         } // postAttachCommand
         // Honour shutdownAction from devcontainer.json.
         let needs_shutdown = self.config.should_shutdown();
@@ -419,8 +477,8 @@ impl Devcontainer {
                 container: cname.clone(),
             });
         } // shutdown
-        Ok(()) // lifecycle complete
-    } // end fn run
+        Ok(())
+    } // end fn attach_and_finalize
     /// Stop and remove the existing container, then run it fresh.
     ///
     /// Pass `no_audit_log = true` to suppress writing to the audit log.
@@ -974,6 +1032,11 @@ mod tests {
         rm_calls: RefCell<u32>,
         exec_result: bool,
         exists_result: bool,
+        /// Value returned by `running()`. Defaults to `true` so lifecycle
+        /// paths that call `start()` then `running()?` succeed without
+        /// extra wiring. Set to `false` via `not_running()` to test the
+        /// `Error::ContainerNotRunning` path in `ensure_up`.
+        running_result: bool,
         /// When `Some(step)`, that step returns `Err`; all others succeed.
         fail_step: Option<FailStep>,
     }
@@ -992,6 +1055,7 @@ mod tests {
                 rm_calls: RefCell::new(0),
                 exec_result: true,
                 exists_result: false,
+                running_result: true,
                 fail_step: None,
             }
         }
@@ -1009,6 +1073,7 @@ mod tests {
                 rm_calls: RefCell::new(0),
                 exec_result: false,
                 exists_result: false,
+                running_result: true,
                 fail_step: None,
             }
         }
@@ -1026,13 +1091,15 @@ mod tests {
                 rm_calls: RefCell::new(0),
                 exec_result: true,
                 exists_result: true,
+                running_result: true,
                 fail_step: None,
             }
         }
 
-        /// Create a mock that succeeds on all exec calls but fails the named
-        /// lifecycle step with a descriptive error.
-        fn failing_at(step: FailStep) -> Self {
+        /// A mock whose `running()` reports `false` even after `start()` —
+        /// used to verify the `ContainerNotRunning` error path in `ensure_up`.
+        #[allow(dead_code)] // referenced only by `up_*` tests
+        fn not_running() -> Self {
             Self {
                 exec_calls: RefCell::new(vec![]),
                 exec_raw_calls: RefCell::new(vec![]),
@@ -1045,6 +1112,34 @@ mod tests {
                 rm_calls: RefCell::new(0),
                 exec_result: true,
                 exists_result: false,
+                running_result: false,
+                fail_step: None,
+            }
+        }
+
+        /// Create a mock that succeeds on all exec calls but fails the named
+        /// lifecycle step with a descriptive error.
+        ///
+        /// `running_result` is set to `false` only when the step is `Start`,
+        /// so that the orchestration actually reaches `start()` to fail it.
+        /// For all later steps the container must look "running" by the time
+        /// `ensure_up`'s final check runs, otherwise the test would fail with
+        /// `ContainerNotRunning` instead of the intended step error.
+        fn failing_at(step: FailStep) -> Self {
+            let running_result = !matches!(step, FailStep::Start);
+            Self {
+                exec_calls: RefCell::new(vec![]),
+                exec_raw_calls: RefCell::new(vec![]),
+                build_calls: RefCell::new(0),
+                create_calls: RefCell::new(0),
+                start_calls: RefCell::new(0),
+                restart_calls: RefCell::new(0),
+                attach_calls: RefCell::new(0),
+                stop_calls: RefCell::new(0),
+                rm_calls: RefCell::new(0),
+                exec_result: true,
+                exists_result: false,
+                running_result,
                 fail_step: Some(step),
             }
         }
@@ -1108,7 +1203,7 @@ mod tests {
             Ok(self.exists_result)
         }
         fn running(&self) -> std::io::Result<bool> {
-            Ok(false)
+            Ok(self.running_result)
         }
         fn cp(&self, _: String, _: String) -> std::io::Result<()> {
             Ok(())
@@ -1915,7 +2010,12 @@ mod tests {
     /// `probe_running()` returns `false` for the default mock (not running).
     #[test]
     fn probe_running_returns_provider_result_false() {
-        let dc = make_devcontainer_with_provider(config_minimal(), Box::new(MockProvider::new()));
+        // Use the dedicated `not_running()` constructor: default `MockProvider::new()`
+        // now reports running=true so post-start lifecycle paths succeed without extra wiring.
+        let dc = make_devcontainer_with_provider(
+            config_minimal(),
+            Box::new(MockProvider::not_running()),
+        );
         assert!(
             !dc.probe_running().expect("probe_running should succeed"),
             "probe_running() should return false when provider returns false"
