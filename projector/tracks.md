@@ -33,3 +33,7 @@ Type: bug · Severity: blocker (spec-compliant `"context": ".."` rejected) · Se
 ## [ ] Track: Add `devcont up` subcommand for non-attached start
 *Link: [./tracks/add_devcont_up_command_20260503/](./tracks/add_devcont_up_command_20260503/)*
 Type: feature · Severity: high (interop — blocks programmatic callers) · Sequencing: independent — can land in parallel with the build.context fix
+
+## [ ] Track: `build.dockerfile` resolution must be independent of `build.context`
+*Link: [./tracks/fix_dockerfile_path_independent_of_context_20260504/](./tracks/fix_dockerfile_path_independent_of_context_20260504/)*
+Type: bug · Severity: blocker (spec violation when both fields are set) · Sequencing: closes a wrong acceptance criterion (#3) from `fix_dockerfile_path_resolution_20260503`; independent of all other open tracks

@@ -1,0 +1,8 @@
+{
+  "track_id": "fix_dockerfile_path_independent_of_context_20260504",
+  "type": "bug",
+  "status": "new",
+  "created_at": "2026-05-03T23:37:32Z",
+  "updated_at": "2026-05-03T23:37:32Z",
+  "description": "resolve_dockerfile_path resolves build.dockerfile relative to build.context when context is provided, but per containers.dev spec build.dockerfile is always relative to devcontainer.json (config_dir) regardless of context. The two paths are independently anchored at config_dir, not chained. Surfaced by user testing of fix_build_context_relative_resolution_20260503: with context = '..' and dockerfile = 'Dockerfile', the dockerfile resolves to <workspace>/Dockerfile instead of the spec-correct <workspace>/.devcontainer/Dockerfile."
+}
