@@ -393,8 +393,18 @@ and approved it.**
 
 ## Phase 5 — Verification Results
 
-- `cargo test --workspace` result: exit 0, 0 failed, 32 ignored (after Phase 3)
-- `cargo test --workspace --test integration -- --ignored` result: exit 0, 32 passed
-  (verified in this environment with docker+podman+alpine available)
-- Final ignored test count: **32**
-- No `FAILED` lines in default `cargo test --workspace` run: confirmed
+- `cargo test --workspace` result: **exit 0**, 0 failed, 32 ignored.
+- `cargo test --workspace --test integration -- --ignored --test-threads=1` result:
+  - **27 passed** (all docker provider, docker-compose, podman provider, and engine-check tests).
+  - **5 failed** (`test_podman_compose_*` tests that call `build()` / `start()` / etc.)
+    — because `podman-compose` is NOT installed in this environment. This is the
+    expected behavior: the `#[ignore]` gate says "requires podman, podman-compose,
+    and alpine:latest to be pre-pulled".
+  - These 5 tests would pass in a CI environment with `podman-compose` installed
+    (which is what the Phase 4 CI YAML draft provisions).
+- Final ignored test count: **32** (per `cargo test --workspace`).
+- No `FAILED` lines in default `cargo test --workspace` run: **confirmed**.
+- All source-level unit tests still pass: **318 passed, 0 failed**.
+- `command_available("podman-compose")` guard that silently masked missing coverage
+  has been removed; all 5 podman-compose tests now explicitly report their
+  prerequisite in the `#[ignore]` reason string.
