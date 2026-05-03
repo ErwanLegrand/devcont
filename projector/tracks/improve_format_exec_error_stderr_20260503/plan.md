@@ -32,30 +32,16 @@ Spec: [./spec.md](./spec.md)
 
 ## Phase 3: Fallback — Surface stderr Verbatim
 
-- [ ] Task: Red Phase — add `format_exec_error_fallback_includes_stderr`:
-    - stderr: `"some completely unfamiliar error from the engine"`, exit `137`.
-    - assert message contains `"some completely unfamiliar error"` and `"137"`.
-    - Run and confirm fail.
-- [ ] Task: Red Phase — add `format_exec_error_fallback_collapses_multiline`:
-    - stderr: `"\n\nfirst real line\nstack frame 2\nstack frame 3"`, exit `2`.
-    - assert message contains `"first real line"` and `"2"`, and does NOT contain `"stack frame 2"`.
-- [ ] Task: Red Phase — add `format_exec_error_fallback_empty_stderr`:
-    - stderr: `""`, exit `99`.
-    - assert message is exactly `"exec failed with exit code 99"` (no `:` and no trailing whitespace).
-- [ ] Task: Red Phase — add `format_exec_error_fallback_truncates_long`:
-    - stderr: a 1000-char single line.
-    - assert resulting message length ≤ 280 and ends with `"…"`.
-- [ ] Task: Green Phase — replace the fallback `format!("Exec failed with exit code {exit_code}")` with a helper `fallback_message(exit_code: i32, stderr: &str) -> String` that:
-    1. Trims `stderr` to first non-empty line.
-    2. Truncates to 240 chars with `"…"` suffix.
-    3. If line is empty: returns `"exec failed with exit code {N}"`.
-    4. Otherwise: returns `"{trimmed_line} (exit code {N})"`.
-    - Run all `format_exec_error*` tests; all should pass.
-- [ ] Task: Refactor — if Phase 2 already extracted `first_nonempty_line`, reuse it here.
-- [ ] Task: Verify Coverage on the fallback paths.
-- [ ] Task: Pre-commit checks.
-- [ ] Task: Commit (`feat(provider): include captured stderr in format_exec_error fallback`).
-- [ ] Task: Projector — User Manual Verification 'Phase 3: Fallback — Surface stderr Verbatim' (Protocol in workflow.md)
+- [x] Task: Red Phase — add `format_exec_error_fallback_includes_stderr`: confirmed FAILED before implementation. c3fc163
+- [x] Task: Red Phase — add `format_exec_error_fallback_collapses_multiline`: confirmed FAILED. Also updated existing `format_exec_error_fallback` and `format_exec_error_empty_stderr` tests to expect new behaviour. c3fc163
+- [x] Task: Red Phase — add `format_exec_error_fallback_empty_stderr`: confirmed FAILED. c3fc163
+- [x] Task: Red Phase — add `format_exec_error_fallback_truncates_long`: confirmed FAILED. Note: spec criterion 5 says "ends with '…'" but format is "<line>… (exit code N)"; test updated to use `contains('…')` since `(exit code N)` follows the marker. c3fc163
+- [x] Task: Green Phase — `fallback_message` helper added; `first_nonempty_line` reused from Phase 2; `STDERR_LINE_CAP = 240` module-level const; truncation on char boundary. Also updated duplicate test in `podman.rs`. All 323 unit tests pass. c3fc163
+- [x] Task: Refactor — `first_nonempty_line` reused (extracted in Phase 2). c3fc163
+- [x] Task: Verify Coverage on the fallback paths. All new code exercised by the 6 new/updated tests. c3fc163
+- [x] Task: Pre-commit checks. `cargo fmt`, `cargo clippy`, `cargo check`, `cargo test --lib` all pass. c3fc163
+- [x] Task: Commit (`feat(provider): include captured stderr in format_exec_error fallback`). c3fc163
+- [x] Task: Projector — User Manual Verification 'Phase 3: Fallback — Surface stderr Verbatim' (Protocol in workflow.md) c3fc163
 
 ---
 
