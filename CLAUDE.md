@@ -2,9 +2,9 @@
 
 ## Branch Model
 
-- **`trunk` is the canonical branch.** All work targets `trunk`. PRs merge into `trunk`.
-- Other long-lived branches (e.g., `main`, `dev`) may exist with disjoint or stale histories — **do not assume they share commits with `trunk`**. Cross-branch operations (merge, cherry-pick, rebase) cannot rely on a shared ancestor.
-- Before starting any non-trivial work in this repo, confirm `git rev-parse --abbrev-ref HEAD` is `trunk`. If not, `git checkout trunk` first.
+- **`trunk` is the only canonical branch.** All work targets `trunk`. PRs merge into `trunk`.
+- Before starting any non-trivial work, confirm `git rev-parse --abbrev-ref HEAD` is `trunk`. If not, `git checkout trunk` first.
+- If you encounter stale `main` or `dev` refs locally or in old session memory, they have been deleted (2026-05-04) and should be ignored.
 
 ## Spawning Agents in Worktrees
 
