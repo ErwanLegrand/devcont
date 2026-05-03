@@ -34,7 +34,10 @@ enum CliCommand {
         #[arg(long)]
         hook_timeout: Option<u32>,
     }, // end Rebuild
-    /// Launch (or re-attach to) the dev container.
+    /// Launch and attach an interactive session in the dev container.
+    ///
+    /// Builds, creates (if needed), starts, runs lifecycle hooks, then attaches.
+    /// Use `up` instead for non-interactive callers that need "ensure running" semantics.
     Start {
         // -- start variant --
         /// Optional project directory path.
@@ -52,6 +55,33 @@ enum CliCommand {
         #[arg(long)]
         hook_timeout: Option<u32>,
     }, // end Start
+    /// Bring the dev container up and return without attaching. Suitable for scripts.
+    ///
+    /// Ensures the container exists and is running, and runs lifecycle hooks
+    /// (onCreate, updateContent, postCreate, postStart). Returns when ready.
+    /// Does not attach to the container, does not honour shutdownAction.
+    ///
+    /// Example programmatic usage:
+    ///   devcont up . && docker exec $(devcont container-name .) echo hello
+    ///
+    /// If your hooks may run for a long time, use --hook-timeout to avoid blocking.
+    Up {
+        // -- up variant --
+        /// Optional project directory path.
+        dir: Option<String>, // project dir
+        /// Trust the devcontainer and skip the initializeCommand confirmation prompt.
+        #[arg(long)]
+        trust: bool,
+        /// Suppress the warning when the container will run as root with no remoteUser configured.
+        #[arg(long)]
+        no_root_check: bool,
+        /// Disable the structured audit log for this invocation.
+        #[arg(long)]
+        no_audit_log: bool,
+        /// Override the per-hook timeout in seconds (overrides hookTimeoutSeconds in config).
+        #[arg(long)]
+        hook_timeout: Option<u32>,
+    }, // end Up
     /// Print the deterministic container name for the dev container and exit.
     ///
     /// Reads devcontainer.json without starting the container or running any hooks.
@@ -118,6 +148,21 @@ fn dispatch(parsed: &Cli) -> std::io::Result<()> {
                 *hook_timeout,
             )?;
         } // handled rebuild
+        Some(CliCommand::Up {
+            dir,
+            trust,
+            no_root_check,
+            no_audit_log,
+            hook_timeout,
+        }) => {
+            commands::up::run(
+                dir.as_deref(),
+                *trust,
+                *no_root_check,
+                *no_audit_log,
+                *hook_timeout,
+            )?;
+        } // handled up
         Some(CliCommand::ContainerName { dir }) => {
             commands::container_name::run(dir.as_deref());
         } // handled container-name
