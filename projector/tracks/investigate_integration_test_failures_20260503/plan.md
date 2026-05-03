@@ -7,8 +7,8 @@ Spec: [./spec.md](./spec.md)
 
 ## Phase 1: Enumerate and Capture Failures
 
-- [ ] Task: Run `cargo test --workspace --test integration --no-fail-fast 2>&1 | tee tmp/integration_test_output.txt` (or stash output in this track directory's `findings.md` working notes — do not commit `tmp/`).
-- [ ] Task: List every failing test name and its panic/assertion message in `findings.md` under section `## Failure Inventory`. One subsection per test, format:
+- [x] Task: Run `cargo test --workspace --test integration --no-fail-fast 2>&1 | tee tmp/integration_test_output.txt` (or stash output in this track directory's `findings.md` working notes — do not commit `tmp/`).
+- [x] Task: List every failing test name and its panic/assertion message in `findings.md` under section `## Failure Inventory`. One subsection per test, format:
     ```
     ### test_<name>
     - **File:line:** path/to/file.rs:NNN
@@ -16,26 +16,26 @@ Spec: [./spec.md](./spec.md)
     - **Stderr excerpt:** <relevant subprocess stderr if any>
     - **Hypothesis:** <one-line guess>
     ```
-- [ ] Task: List the 9 currently-passing tests for completeness, with a note explaining why they pass (no engine call, mocked, etc.).
-- [ ] Task: Pre-commit checks (no source changes expected; just doc additions).
-- [ ] Task: Commit (`docs(projector): enumerate tests/integration.rs failure inventory`).
-- [ ] Task: Projector — User Manual Verification 'Phase 1: Enumerate and Capture Failures' (Protocol in workflow.md)
+- [x] Task: List the 9 currently-passing tests for completeness, with a note explaining why they pass (no engine call, mocked, etc.).
+- [x] Task: Pre-commit checks (no source changes expected; just doc additions).
+- [x] Task: Commit (`docs(projector): enumerate tests/integration.rs failure inventory`).
+- [x] Task: Projector — User Manual Verification 'Phase 1: Enumerate and Capture Failures' (Protocol in workflow.md)
 
 ---
 
 ## Phase 2: Classify and Decide Remediation
 
-- [ ] Task: For each failing test in `findings.md`, classify by:
+- [x] Task: For each failing test in `findings.md`, classify by:
     - **Class:** `live-engine-required` / `network-required` / `podman-not-installed` / `misconfigured` / `genuinely-broken` / `brittle` / `platform-specific`.
     - **Decision:** `#[ignore]` / `fix-test` / `fix-source` / `cfg-gate`.
     - **Justification:** one sentence per decision.
-- [ ] Task: Add a `## Classification Summary` section to `findings.md`:
+- [x] Task: Add a `## Classification Summary` section to `findings.md`:
     - Table of test → class → decision.
     - Aggregate counts per class.
-- [ ] Task: Validate decisions against the spec's "Decision Criteria for Default-Run vs `#[ignore]`". Document any outliers.
-- [ ] Task: Pre-commit checks.
-- [ ] Task: Commit (`docs(projector): classify integration test failures and decide remediation`).
-- [ ] Task: Projector — User Manual Verification 'Phase 2: Classify and Decide Remediation' (Protocol in workflow.md)
+- [x] Task: Validate decisions against the spec's "Decision Criteria for Default-Run vs `#[ignore]`". Document any outliers.
+- [x] Task: Pre-commit checks.
+- [x] Task: Commit (`docs(projector): classify integration test failures and decide remediation`).
+- [x] Task: Projector — User Manual Verification 'Phase 2: Classify and Decide Remediation' (Protocol in workflow.md)
 
 ---
 
