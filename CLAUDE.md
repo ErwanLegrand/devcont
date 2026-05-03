@@ -1,5 +1,26 @@
 # Claude Code Instructions
 
+## Branch Model
+
+- **`trunk` is the canonical branch.** All work targets `trunk`. PRs merge into `trunk`.
+- Other long-lived branches (e.g., `main`, `dev`) may exist with disjoint or stale histories — **do not assume they share commits with `trunk`**. Cross-branch operations (merge, cherry-pick, rebase) cannot rely on a shared ancestor.
+- Before starting any non-trivial work in this repo, confirm `git rev-parse --abbrev-ref HEAD` is `trunk`. If not, `git checkout trunk` first.
+
+## Spawning Agents in Worktrees
+
+The `Agent` tool's `isolation: "worktree"` creates a worktree forked from the **parent's current HEAD**, not from `trunk`. Stale worktrees under `.claude/worktrees/agent-*` may also be on branches that diverged from `trunk` long ago. Both lead to agent commits that conflict on integration even when no real code conflict exists.
+
+**Required pre-flight before any `isolation: "worktree"` agent spawn from this repo:**
+
+1. Confirm the parent worktree is on `trunk` and up to date: `git fetch origin && git rev-parse HEAD trunk origin/trunk` should return three identical SHAs.
+2. **Instruct each spawned agent to align its worktree with `origin/trunk` before reading specs:**
+
+   > Before reading any spec, run `git fetch origin && git reset --hard origin/trunk`. This pins your branch's base to `trunk`'s tip regardless of where the worktree was forked.
+
+3. Before integrating an agent's branch, verify `git merge-base trunk <agent-branch>` is recent (i.e., a commit on `trunk`). If it's deep history (e.g., the initial commit), the agent forked wrong — prefer cherry-pick over merge to avoid pulling in divergent history.
+
+Skip `git push --force` to recover from a misaligned base; cherry-pick the deliverable commits onto `trunk` instead. Treat misaligned bases as a recoverable diagnostic, not a blocker.
+
 ## Git Commits
 
 - **Always use** `git commit -m 'message'` directly — no command substitution, no heredocs, no temp files.
