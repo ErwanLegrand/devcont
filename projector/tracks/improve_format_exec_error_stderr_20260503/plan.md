@@ -18,7 +18,7 @@ Spec: [./spec.md](./spec.md)
 
 ---
 
-## Phase 2: New Pattern — Missing Dockerfile
+## Phase 2: New Pattern — Missing Dockerfile [checkpoint: 06aab79]
 
 - [x] Task: Red Phase — add `format_exec_error_missing_dockerfile`: confirmed FAILED before implementation. e1c0897
 - [x] Task: Green Phase — added new arm after daemon-not-running arm; extracted `first_nonempty_line` helper. All 12 `format_exec_error` tests pass. e1c0897
