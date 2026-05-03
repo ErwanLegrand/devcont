@@ -345,3 +345,186 @@ fn sanity_path_type_check() {
     assert!(p.is_absolute());
     assert_eq!(p.file_name().unwrap().to_str().unwrap(), ".devcontainer");
 }
+
+// ---------------------------------------------------------------------------
+// build.context relative resolution against config_dir (AC #1-#8)
+//
+// These tests close the residual gap from fix_dockerfile_path_resolution:
+// validate_build_context must resolve the context string against config_dir
+// before checking workspace-root containment.
+// ---------------------------------------------------------------------------
+
+/// `context = ".."` from `.devcontainer/devcontainer.json` resolves to the
+/// workspace root and must pass validation.
+///
+/// This is the canonical regression test for the bug: the old code validated
+/// `".."` literally against the workspace root, which rejected a spec-compliant
+/// context that points at the project root.
+#[test]
+fn validate_build_context_dotdot_resolves_to_workspace_root() {
+    let ws = tempfile::tempdir().expect("tempdir");
+    let dc_dir = ws.path().join(".devcontainer");
+    std::fs::create_dir_all(&dc_dir).expect("create .devcontainer dir");
+    std::fs::write(
+        dc_dir.join("devcontainer.json"),
+        r#"{"name":"ctx-dotdot","build":{"dockerfile":"../Dockerfile","context":".."}}"#,
+    )
+    .expect("write devcontainer.json");
+    // Dockerfile must exist at the resolved location: workspace root.
+    std::fs::write(ws.path().join("Dockerfile"), "FROM alpine\n").expect("write Dockerfile");
+
+    let result = Devcontainer::load(ws.path());
+    assert!(
+        result.is_ok(),
+        "context '..' from .devcontainer/ must resolve to workspace root and pass, got: {:?}",
+        result.err()
+    );
+}
+
+/// `context = "subdir"` from `.devcontainer/devcontainer.json` resolves to
+/// `<workspace>/.devcontainer/subdir` — inside the workspace.
+#[test]
+fn validate_build_context_subdir_relative_to_config_dir() {
+    let ws = tempfile::tempdir().expect("tempdir");
+    let dc_dir = ws.path().join(".devcontainer");
+    let ctx_dir = dc_dir.join("subdir");
+    std::fs::create_dir_all(&ctx_dir).expect("create subdir");
+    std::fs::write(ctx_dir.join("Dockerfile"), "FROM alpine\n").expect("write Dockerfile");
+    std::fs::write(
+        dc_dir.join("devcontainer.json"),
+        r#"{"name":"ctx-subdir","build":{"dockerfile":"Dockerfile","context":"subdir"}}"#,
+    )
+    .expect("write devcontainer.json");
+
+    let result = Devcontainer::load(ws.path());
+    assert!(
+        result.is_ok(),
+        "context 'subdir' from .devcontainer/ must resolve within workspace, got: {:?}",
+        result.err()
+    );
+}
+
+/// `context = "."` from `.devcontainer.json` at workspace root resolves to the
+/// workspace root itself and must pass validation.
+#[test]
+fn validate_build_context_root_layout_dot() {
+    let ws = tempfile::tempdir().expect("tempdir");
+    std::fs::write(
+        ws.path().join(".devcontainer.json"),
+        r#"{"name":"ctx-dot","build":{"dockerfile":"Dockerfile","context":"."}}"#,
+    )
+    .expect("write .devcontainer.json");
+    std::fs::write(ws.path().join("Dockerfile"), "FROM alpine\n").expect("write Dockerfile");
+
+    let result = Devcontainer::load(ws.path());
+    assert!(
+        result.is_ok(),
+        "context '.' from workspace root must pass, got: {:?}",
+        result.err()
+    );
+}
+
+/// `context = "../../escape"` from `.devcontainer/devcontainer.json` resolves
+/// two levels above the workspace root and must be rejected.
+///
+/// Note: `"../sibling-project"` (single `..`) from `.devcontainer/` resolves to
+/// `<workspace>/sibling-project` which is *inside* the workspace. Two `..`
+/// hops are required to escape from `config_dir = <workspace>/.devcontainer/`.
+#[test]
+fn validate_build_context_dotdot_dotdot_escapes_root() {
+    let ws = tempfile::tempdir().expect("tempdir");
+    let dc_dir = ws.path().join(".devcontainer");
+    std::fs::create_dir_all(&dc_dir).expect("create .devcontainer dir");
+    std::fs::write(
+        dc_dir.join("devcontainer.json"),
+        r#"{"name":"ctx-escape","build":{"dockerfile":"Dockerfile","context":"../../escape"}}"#,
+    )
+    .expect("write devcontainer.json");
+
+    let result = Devcontainer::load(ws.path());
+    assert!(
+        result.is_err(),
+        "context '../../escape' must be rejected as it escapes the workspace"
+    );
+}
+
+/// `context = "../sibling-project"` from `.devcontainer/devcontainer.json`
+/// is resolved relative to `config_dir` (= `<workspace>/.devcontainer/`).
+/// One `..` hop leads back to the workspace root; then `sibling-project` is
+/// appended → `<workspace>/sibling-project` which is INSIDE the workspace.
+///
+/// This documents the expected behaviour and confirms that the fix does not
+/// accidentally reject valid sub-paths.
+#[test]
+fn validate_build_context_sibling_within_workspace_passes() {
+    let ws = tempfile::tempdir().expect("tempdir");
+    let dc_dir = ws.path().join(".devcontainer");
+    let sib_dir = ws.path().join("sibling-project");
+    std::fs::create_dir_all(&dc_dir).expect("create .devcontainer dir");
+    std::fs::create_dir_all(&sib_dir).expect("create sibling-project dir");
+    std::fs::write(sib_dir.join("Dockerfile"), "FROM alpine\n").expect("write Dockerfile");
+    std::fs::write(
+        dc_dir.join("devcontainer.json"),
+        r#"{"name":"ctx-sibling","build":{"dockerfile":"Dockerfile","context":"../sibling-project"}}"#,
+    )
+    .expect("write devcontainer.json");
+
+    // "../sibling-project" from .devcontainer/ → workspace/sibling-project → inside workspace → OK
+    let result = Devcontainer::load(ws.path());
+    assert!(
+        result.is_ok(),
+        "context '../sibling-project' resolves to <workspace>/sibling-project which is inside workspace, got: {:?}",
+        result.err()
+    );
+}
+
+/// Absolute `context` path inside the workspace must pass without error.
+#[test]
+fn validate_build_context_absolute_inside_root() {
+    let ws = tempfile::tempdir().expect("tempdir");
+    let dc_dir = ws.path().join(".devcontainer");
+    let abs_ctx = ws.path().join("ctx");
+    std::fs::create_dir_all(&dc_dir).expect("create .devcontainer dir");
+    std::fs::create_dir_all(&abs_ctx).expect("create ctx dir");
+    std::fs::write(abs_ctx.join("Dockerfile"), "FROM alpine\n").expect("write Dockerfile");
+    let json = format!(
+        r#"{{"name":"ctx-abs-in","build":{{"dockerfile":"Dockerfile","context":"{}"}}}}"#,
+        abs_ctx.display()
+    );
+    std::fs::write(dc_dir.join("devcontainer.json"), json).expect("write devcontainer.json");
+
+    let result = Devcontainer::load(ws.path());
+    assert!(
+        result.is_ok(),
+        "absolute context inside workspace root must pass, got: {:?}",
+        result.err()
+    );
+}
+
+/// Absolute `context` path outside the workspace must NOT return an error from
+/// `validate_build_context` — it emits a warning but is allowed through.
+///
+/// We use an image-based config (no Dockerfile) to isolate the context
+/// validation check from Dockerfile path resolution.
+#[test]
+fn validate_build_context_absolute_outside_root_warns_only() {
+    let ws = tempfile::tempdir().expect("tempdir");
+    let dc_dir = ws.path().join(".devcontainer");
+    std::fs::create_dir_all(&dc_dir).expect("create .devcontainer dir");
+    // Use /tmp as the absolute context — guaranteed to be outside any tempdir workspace.
+    // Use image (not dockerfile) so validate_build_source does not add a secondary failure.
+    std::fs::write(
+        dc_dir.join("devcontainer.json"),
+        r#"{"name":"ctx-abs-out","image":"alpine","build":{"context":"/tmp"}}"#,
+    )
+    .expect("write devcontainer.json");
+
+    let result = Devcontainer::load(ws.path());
+    // validate_build_context allows absolute paths outside root (warning only);
+    // build_source resolves to Image("alpine") so no Dockerfile validation occurs.
+    assert!(
+        result.is_ok(),
+        "absolute context outside workspace root must not error (warning only), got: {:?}",
+        result.err()
+    );
+}
