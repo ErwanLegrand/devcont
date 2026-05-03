@@ -365,6 +365,34 @@ fn first_nonempty_line(text: &str) -> &str {
         .unwrap_or("")
 }
 
+/// Maximum number of bytes from a stderr line surfaced in the fallback message.
+const STDERR_LINE_CAP: usize = 240;
+
+/// Build the fallback error message when no named pattern matches.
+///
+/// Surfaces the first non-empty stderr line, capped at [`STDERR_LINE_CAP`] chars
+/// with `…` on truncation, as `"<line> (exit code N)"`.  When `stderr` is empty
+/// or all whitespace, returns `"exec failed with exit code N"` with no trailing
+/// punctuation artefacts.
+fn fallback_message(exit_code: i32, stderr: &str) -> String {
+    let line = first_nonempty_line(stderr);
+    if line.is_empty() {
+        return format!("exec failed with exit code {exit_code}");
+    }
+    if line.len() <= STDERR_LINE_CAP {
+        format!("{line} (exit code {exit_code})")
+    } else {
+        // Truncate on a char boundary to avoid splitting a multi-byte codepoint.
+        let end = line
+            .char_indices()
+            .take_while(|(i, _)| *i < STDERR_LINE_CAP)
+            .last()
+            .map_or(STDERR_LINE_CAP, |(i, c)| i + c.len_utf8());
+        let truncated = &line[..end];
+        format!("{truncated}… (exit code {exit_code})")
+    }
+}
+
 /// Format a human-friendly error message from an exec failure.
 ///
 /// Inspects `stderr` for common error patterns and returns a descriptive
@@ -418,7 +446,7 @@ pub(crate) fn format_exec_error(exit_code: i32, stderr: &str) -> String {
     {
         format!("Dockerfile not found: {}", first_nonempty_line(stderr))
     } else {
-        format!("Exec failed with exit code {exit_code}")
+        fallback_message(exit_code, stderr)
     }
 }
 
@@ -641,14 +669,71 @@ mod tests {
 
     #[test]
     fn format_exec_error_fallback() {
+        // After Phase 3: fallback surfaces stderr's first non-empty line.
         let msg = format_exec_error(1, "some unknown error");
-        assert_eq!(msg, "Exec failed with exit code 1");
+        assert!(
+            msg.contains("some unknown error") && msg.contains('1'),
+            "got: {msg}"
+        );
     }
 
     #[test]
     fn format_exec_error_empty_stderr() {
+        // After Phase 3: empty stderr → clean "exec failed with exit code N".
         let msg = format_exec_error(42, "");
-        assert_eq!(msg, "Exec failed with exit code 42");
+        assert_eq!(msg, "exec failed with exit code 42");
+    }
+
+    #[test]
+    fn format_exec_error_fallback_includes_stderr() {
+        let msg = format_exec_error(137, "some completely unfamiliar error from the engine");
+        assert!(
+            msg.contains("some completely unfamiliar error from the engine"),
+            "expected stderr content in message, got: {msg}"
+        );
+        assert!(
+            msg.contains("137"),
+            "expected exit code in message, got: {msg}"
+        );
+    }
+
+    #[test]
+    fn format_exec_error_fallback_collapses_multiline() {
+        let msg = format_exec_error(2, "\n\nfirst real line\nstack frame 2\nstack frame 3");
+        assert!(
+            msg.contains("first real line"),
+            "expected first real line in message, got: {msg}"
+        );
+        assert!(
+            msg.contains('2'),
+            "expected exit code in message, got: {msg}"
+        );
+        assert!(
+            !msg.contains("stack frame 2"),
+            "message must not contain second line, got: {msg}"
+        );
+    }
+
+    #[test]
+    fn format_exec_error_fallback_empty_stderr() {
+        let msg = format_exec_error(99, "");
+        assert_eq!(msg, "exec failed with exit code 99");
+    }
+
+    #[test]
+    fn format_exec_error_fallback_truncates_long() {
+        let long_stderr = "x".repeat(1000);
+        let msg = format_exec_error(1, &long_stderr);
+        assert!(
+            msg.len() <= 280,
+            "message length {} exceeds 280 chars",
+            msg.len()
+        );
+        // The truncation marker '…' appears in the message (before the exit-code suffix).
+        assert!(
+            msg.contains('…'),
+            "expected truncation marker '…' in message, got: {msg}"
+        );
     }
 
     #[test]

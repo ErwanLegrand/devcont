@@ -648,7 +648,12 @@ mod tests {
 
     #[test]
     fn parse_error_fallback() {
+        // After Phase 3 of improve_format_exec_error_stderr: fallback surfaces stderr's
+        // first non-empty line rather than discarding it.
         let msg = crate::provider::utils::format_exec_error(1, "some unknown error");
-        assert_eq!(msg, "Exec failed with exit code 1");
+        assert!(
+            msg.contains("some unknown error") && msg.contains('1'),
+            "expected stderr content and exit code in fallback, got: {msg}"
+        );
     }
 }
