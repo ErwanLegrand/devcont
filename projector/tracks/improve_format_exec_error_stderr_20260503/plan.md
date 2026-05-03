@@ -47,15 +47,13 @@ Spec: [./spec.md](./spec.md)
 
 ## Phase 4: Re-run the Cascade Track's Smoke Test
 
-- [ ] Task: Rebuild the release binary (`cargo build --release`).
-- [ ] Task: Run the existing fixture at `tmp/devcont-smoke-test/.devcontainer/devcontainer.json` (recreate if absent — see fix_start_orchestration_cascade plan's Verification Log).
-- [ ] Task: Confirm `./target/release/devcont start tmp/devcont-smoke-test` now produces an error message containing the words `Dockerfile` and `not found` (or, if the missing-file pattern doesn't trigger for this exact docker buildx output, at least the docker stderr's first informative line).
-- [ ] Task: Update `projector/tracks/fix_start_orchestration_cascade_20260503/plan.md`:
-    - Mark the "Names the missing Dockerfile" row in its Verification Log as ✓ instead of ✗.
-    - Strike the "Follow-up (open)" paragraph and replace it with: `**Follow-up (closed).** Resolved by track \`improve_format_exec_error_stderr_20260503\` (commit <SHA>).`
-- [ ] Task: Pre-commit checks.
-- [ ] Task: Commit (`projector(plan): close stderr-passthrough follow-up on cascade track`).
-- [ ] Task: Projector — User Manual Verification 'Phase 4: Re-run the Cascade Track's Smoke Test' (Protocol in workflow.md)
+- [x] Task: Rebuild the release binary (`cargo build --release`). f18b142
+- [x] Task: Run the existing fixture at `tmp/devcont-smoke-test/.devcontainer/devcontainer.json` (recreated from Verification Log). Cherry-picked `refactor(provider): make non-zero exit propagate as Err` (30c2942) and `feat(provider): include step name and stderr in lifecycle error` (c2875cb) into this branch first, as the track spec requires these as a dependency. f18b142
+- [x] Task: Confirmed `cargo run --release -- start tmp/devcont-smoke-test` (via sandbox-bypassed Docker) produced `Error: build: Dockerfile not found: #0 building with "default" instance using docker driver` (exit 1). Message contains "Dockerfile" ✓ and "not found" ✓. f18b142
+- [x] Task: Updated `projector/tracks/fix_start_orchestration_cascade_20260503/plan.md`: marked "Names the missing Dockerfile" as ✓; replaced "Follow-up (open)" with "Follow-up (closed)" referencing e1c0897 and c3fc163. f18b142
+- [x] Task: Pre-commit checks pass. f18b142
+- [x] Task: Commit (`projector(plan): close stderr-passthrough follow-up on cascade track`). f18b142
+- [x] Task: Projector — User Manual Verification 'Phase 4: Re-run the Cascade Track's Smoke Test' (Protocol in workflow.md) f18b142
 
 ---
 
