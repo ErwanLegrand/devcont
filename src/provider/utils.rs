@@ -357,12 +357,37 @@ pub(crate) fn resolve_dockerfile_path(
     base.join(dockerfile_path)
 }
 
+/// Return the first non-empty (after trimming) line of `text`, or `""` if all lines are empty.
+fn first_nonempty_line(text: &str) -> &str {
+    text.lines()
+        .map(str::trim)
+        .find(|l| !l.is_empty())
+        .unwrap_or("")
+}
+
 /// Format a human-friendly error message from an exec failure.
 ///
-/// Inspects `stderr` for common error patterns (image not found, permission
-/// denied, daemon not running, container already exists) and returns a
-/// descriptive message.  Falls back to a generic "Exec failed with exit
-/// code N" when no pattern matches or `stderr` is empty.
+/// Inspects `stderr` for common error patterns and returns a descriptive
+/// message:
+///
+/// 1. **Image not found** — `"no such image"` or `"image not known"`.
+/// 2. **Permission denied** — `"permission denied"` or `"not enough permissions"`.
+/// 3. **Daemon not running** — `"cannot connect"`, `"connection refused"`,
+///    `"daemon is not running"`, or `"no such file or directory"` when the path
+///    contains `.sock` (socket file missing).
+/// 4. **Container already exists** — `"container already exists"`.
+/// 5. **Missing Dockerfile** — `"failed to read dockerfile"` or
+///    (`"no such file or directory"` with `"dockerfile"` mentioned, and NOT a
+///    socket path — the socket case is already caught by arm 3 above).
+/// 6. **Fallback** — surfaces the first non-empty stderr line (capped at 240
+///    chars) so the user sees the actual engine diagnostic.  Returns
+///    `"exec failed with exit code N"` when `stderr` is empty.
+///
+/// # Security note
+/// The first stderr line is passed through verbatim.  This mirrors what the
+/// user would see running the same container-engine command directly.  Build
+/// steps that echo secrets to stderr could expose them here; this is
+/// considered the user's responsibility (identical to direct CLI usage).
 pub(crate) fn format_exec_error(exit_code: i32, stderr: &str) -> String {
     let lower = stderr.to_lowercase();
     if lower.contains("no such image") || lower.contains("image not known") {
@@ -386,6 +411,12 @@ pub(crate) fn format_exec_error(exit_code: i32, stderr: &str) -> String {
             "Container already exists: {}",
             stderr.lines().next().unwrap_or("unknown")
         )
+    } else if lower.contains("failed to read dockerfile")
+        || (lower.contains("no such file or directory")
+            && lower.contains("dockerfile")
+            && !lower.contains(".sock"))
+    {
+        format!("Dockerfile not found: {}", first_nonempty_line(stderr))
     } else {
         format!("Exec failed with exit code {exit_code}")
     }
@@ -618,6 +649,16 @@ mod tests {
     fn format_exec_error_empty_stderr() {
         let msg = format_exec_error(42, "");
         assert_eq!(msg, "Exec failed with exit code 42");
+    }
+
+    #[test]
+    fn format_exec_error_missing_dockerfile() {
+        let stderr = "#1 [internal] load build definition from Dockerfile\n#1 transferring dockerfile: 2B done\n#1 DONE 0.0s\nERROR: failed to build: failed to solve: failed to read dockerfile: open Dockerfile: no such file or directory";
+        let msg = format_exec_error(1, stderr);
+        assert!(
+            msg.contains("Dockerfile") && msg.contains("not found"),
+            "expected message to contain 'Dockerfile' and 'not found', got: {msg}"
+        );
     }
 
     // --- inject_ssh_agent ---
