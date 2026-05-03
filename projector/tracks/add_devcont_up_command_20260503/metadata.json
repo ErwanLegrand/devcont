@@ -1,0 +1,8 @@
+{
+  "track_id": "add_devcont_up_command_20260503",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-05-03T16:19:07Z",
+  "updated_at": "2026-05-03T16:19:07Z",
+  "description": "devcont start always ends with docker attach, blocking programmatic callers (CI scripts, agent entrypoint.sh) that want ensure-running-then-return semantics. Add a new devcont up subcommand that ensures the container is up and running, runs lifecycle hooks, and returns without attaching."
+}

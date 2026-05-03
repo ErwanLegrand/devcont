@@ -25,3 +25,11 @@ Type: feature · Severity: medium (UX) · Sequencing: depends on `fix_start_orch
 ## [ ] Track: Investigate `tests/integration.rs` failures
 *Link: [./tracks/investigate_integration_test_failures_20260503/](./tracks/investigate_integration_test_failures_20260503/)*
 Type: bug · Severity: medium · Sequencing: independent — can run in parallel with the format_exec_error track
+
+## [ ] Track: Resolve `build.context` relative to `config_dir` before validation
+*Link: [./tracks/fix_build_context_relative_resolution_20260503/](./tracks/fix_build_context_relative_resolution_20260503/)*
+Type: bug · Severity: blocker (spec-compliant `"context": ".."` rejected) · Sequencing: closes acceptance criterion #7 of `fix_dockerfile_path_resolution_20260503`; independent of the up-command track
+
+## [ ] Track: Add `devcont up` subcommand for non-attached start
+*Link: [./tracks/add_devcont_up_command_20260503/](./tracks/add_devcont_up_command_20260503/)*
+Type: feature · Severity: high (interop — blocks programmatic callers) · Sequencing: independent — can land in parallel with the build.context fix
