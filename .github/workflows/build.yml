@@ -42,7 +42,7 @@ jobs:
       run: cargo deny check licenses bans advisories
       if: matrix.os == 'ubuntu-latest'
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: devcont-${{ matrix.name }}
         path: target/release/${{ matrix.bin }}
